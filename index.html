@@ -20,7 +20,7 @@
             color: #ffffff;
         }
 
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             box-sizing: border-box;
             color: #ffffff;
@@ -78,9 +78,21 @@
 </head>
 <body>
 
-<h2>Message Board</h2>
+<!-- ADDED: Name List section (user types all names here) -->
+<h2>Name List</h2>
+<p style="color:#fff;margin-top:0;margin-bottom:6px;">Type each name on its own line (these will populate the dropdown used in the message board):</p>
+<textarea id="nameListInput" placeholder="Alice
+Bob
+Charlie"></textarea>
+<br>
+<button id="saveNamesBtn">Save Names</button>
 
-<input id="nameInput" type="text" placeholder="Your name" required>
+<h2 style="margin-top:20px;">Message Board</h2>
+
+<!-- replaced single-line name text input with a dropdown populated from the Name List -->
+<select id="nameSelect" required>
+    <option value="" disabled selected>— select a name —</option>
+</select>
 <br><br>
 
 <textarea id="messageInput" placeholder="Type a message..."></textarea>
@@ -95,9 +107,13 @@
 <script>
     const messagesDiv = document.getElementById('messages');
     const messageInput = document.getElementById('messageInput');
-    const nameInput = document.getElementById('nameInput');
+    const nameSelect = document.getElementById('nameSelect');
     const sendBtn = document.getElementById('sendBtn');
     const clearBtn = document.getElementById('clearBtn');
+
+    // Name list elements
+    const nameListInput = document.getElementById('nameListInput');
+    const saveNamesBtn = document.getElementById('saveNamesBtn');
 
     function loadMessages() {
         const messages = JSON.parse(localStorage.getItem('messages')) || [];
@@ -128,7 +144,7 @@
     }
 
     function addMessage() {
-        const name = nameInput.value.trim();
+        const name = nameSelect.value.trim();
         const text = messageInput.value.trim();
         if (!name || !text) return;
 
@@ -145,6 +161,62 @@
         loadMessages();
     }
 
+    // --- Name list handling ---
+    function parseNames(raw) {
+        // split on newlines or commas, trim, remove empties, dedupe preserving order
+        const parts = raw.split(/\r?\n|,/).map(s => s.trim()).filter(s => s.length > 0);
+        const seen = new Set();
+        const out = [];
+        for (const p of parts) {
+            if (!seen.has(p)) {
+                seen.add(p);
+                out.push(p);
+            }
+        }
+        return out;
+    }
+
+    function saveNames() {
+        const raw = nameListInput.value || "";
+        const names = parseNames(raw);
+        localStorage.setItem('names', JSON.stringify(names));
+        loadNames();
+    }
+
+    function loadNames() {
+        const names = JSON.parse(localStorage.getItem('names')) || [];
+        // populate textarea if empty (first time)
+        if (!nameListInput.value && names.length) {
+            nameListInput.value = names.join("\n");
+        }
+
+        // populate select
+        nameSelect.innerHTML = "";
+        if (names.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = "";
+            opt.disabled = true;
+            opt.selected = true;
+            opt.textContent = "— no names saved —";
+            nameSelect.appendChild(opt);
+        } else {
+            const placeholder = document.createElement('option');
+            placeholder.value = "";
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            placeholder.textContent = "— select a name —";
+            nameSelect.appendChild(placeholder);
+
+            names.forEach(n => {
+                const opt = document.createElement('option');
+                opt.value = n;
+                opt.textContent = n;
+                nameSelect.appendChild(opt);
+            });
+        }
+    }
+
+    // wire up events
     messageInput.addEventListener('keydown', function (event) {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -155,6 +227,14 @@
     sendBtn.addEventListener('click', addMessage);
     clearBtn.addEventListener('click', clearMessages);
 
+    saveNamesBtn.addEventListener('click', function () {
+        saveNames();
+        // after saving, automatically focus the message textarea for convenience
+        messageInput.focus();
+    });
+
+    // initialize
+    loadNames();
     loadMessages();
 </script>
 
