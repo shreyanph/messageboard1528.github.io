@@ -1,8 +1,21 @@
-<h2>Contact Me</h2>
+<h2>Send an Email</h2>
 
-<form action="mailto:shreyanph@gmail.com" method="POST" enctype="text/plain">
-    <input type="text" name="Name" placeholder="Your name" required><br><br>
-    <input type="email" name="Email" placeholder="Your email" required><br><br>
-    <textarea name="Message" placeholder="Your message" required></textarea><br><br>
+<form onsubmit="sendEmail(); return false;">
+    <input type="email" id="to" placeholder="Recipient email" required><br><br>
+
+    <input type="text" id="subject" placeholder="Subject" required><br><br>
+
+    <textarea id="message" placeholder="Message" required></textarea><br><br>
+
     <button type="submit">Send</button>
 </form>
+
+<script>
+function sendEmail() {
+    const to = document.getElementById("to").value;
+    const subject = encodeURIComponent(document.getElementById("subject").value);
+    const message = encodeURIComponent(document.getElementById("message").value);
+
+    window.location.href = `mailto:${to}?subject=${subject}&body=${message}`;
+}
+</script>
