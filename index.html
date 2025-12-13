@@ -104,6 +104,7 @@
             border: 1px solid rgba(255,255,255,0.15);
             padding: 6px 10px;
             border-radius: 6px;
+            pointer-events: auto;
         }
 
         /* Modal / panel for How To Use */
@@ -243,14 +244,17 @@ Charlie"></textarea>
     const howBackdrop = document.getElementById('howBackdrop');
     const howClose = document.getElementById('howClose');
 
-    howBtn.addEventListener('click', () => {
-      howBackdrop.style.display = 'flex';
-    });
-    howClose.addEventListener('click', () => {
-      howBackdrop.style.display = 'none';
-    });
-    howBackdrop.addEventListener('click', (e) => {
-      if (e.target === howBackdrop) howBackdrop.style.display = 'none';
+    // Make the How-To button hookup robust (ensure handlers are attached after elements exist)
+    window.addEventListener('load', () => {
+      howBtn.addEventListener('click', () => {
+        howBackdrop.style.display = 'flex';
+      });
+      howClose.addEventListener('click', () => {
+        howBackdrop.style.display = 'none';
+      });
+      howBackdrop.addEventListener('click', (e) => {
+        if (e.target === howBackdrop) howBackdrop.style.display = 'none';
+      });
     });
 
     // color palette
@@ -317,4 +321,169 @@ Charlie"></textarea>
         if (Array.isArray(local)) populateNames(local);
       }
     }, err => {
-      const local = JSON.parse(localStorage.getItem('names') ||
+      const local = JSON.parse(localStorage.getItem('names') || 'null');
+      if (Array.isArray(local)) populateNames(local);
+    });
+
+    saveNamesBtn.addEventListener('click', async () => {
+      const names = parseNames(nameListInput.value || "");
+      try {
+        await setDoc(namesDocRef, { list: names });
+        localStorage.setItem('names', JSON.stringify(names));
+      } catch (err) {
+        alert("Failed to save names to cloud: " + err.message);
+      }
+    });
+
+    function populateNames(names) {
+      localStorage.setItem('names', JSON.stringify(names));
+      nameSelect.innerHTML = "";
+      const placeholder = document.createElement('option');
+      placeholder.value = "";
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      placeholder.textContent = "Select a name";
+      nameSelect.appendChild(placeholder);
+      names.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        nameSelect.appendChild(opt);
+      });
+    }
+
+    // -------------------- Messages (collection: messages) --------------------
+    const messagesCol = collection(db, 'messages');
+    const messagesQuery = query(messagesCol, orderBy('time', 'asc'));
+
+    // realtime listener for messages
+    onSnapshot(messagesQuery, snapshot => {
+      const msgs = [];
+      snapshot.forEach(docSnap => {
+        const d = docSnap.data();
+        msgs.push({
+          id: docSnap.id,
+          name: d.name,
+          text: d.text || "",
+          time: d.time || null
+        });
+      });
+      renderMessages(msgs);
+    }, err => {
+      console.error("Realtime messages error:", err);
+    });
+
+    // Render messages such that each timestamp separates authors and corresponds to the block BELOW it
+    function renderMessages(messages) {
+      messagesDiv.innerHTML = "";
+      if (messages.length === 0) return;
+
+      // Top timestamp corresponds to the first message's time (labels the block below)
+      const topTime = formatTimestamp(messages[0].time);
+      messagesDiv.appendChild(createTimestampRow(topTime));
+
+      messages.forEach((m, i) => {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.style.background = colorForName(m.name);
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.textContent = m.name + ': ';
+
+        div.appendChild(nameSpan);
+        div.appendChild(document.createTextNode(m.text));
+        messagesDiv.appendChild(div);
+
+        // If next message author differs, insert timestamp that corresponds to the messages below (use next message's time)
+        if (i < messages.length - 1 && messages[i].name !== messages[i + 1].name) {
+          const nextTime = formatTimestamp(messages[i + 1].time);
+          messagesDiv.appendChild(createTimestampRow(nextTime));
+        }
+      });
+
+      if (messagesDiv.lastElementChild) {
+        messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+
+    function createTimestampRow(text) {
+      const row = document.createElement('div');
+      row.className = 'timestamp-row';
+      const left = document.createElement('div'); left.className = 'line';
+      const mid = document.createElement('div'); mid.className = 'timestamp-text'; mid.textContent = text || '';
+      const right = document.createElement('div'); right.className = 'line';
+      row.appendChild(left); row.appendChild(mid); row.appendChild(right);
+      return row;
+    }
+
+    // -------------------- Retention: auto-clear to keep last 10 if total > 100 --------------------
+    async function enforceRetention() {
+      try {
+        const snap = await getDocs(messagesQuery);
+        const total = snap.size;
+        if (total > 100) {
+          const numToDelete = total - 10;
+          // snap.docs is ordered ascending by time due to messagesQuery
+          const docsToDelete = snap.docs.slice(0, numToDelete);
+          const deletes = docsToDelete.map(d => deleteDoc(doc(db, 'messages', d.id)));
+          await Promise.all(deletes);
+        }
+      } catch (err) {
+        console.error('Retention enforcement failed:', err);
+      }
+    }
+
+    // -------------------- Add message --------------------
+    sendBtn.addEventListener('click', addMessage);
+    messageInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        addMessage();
+      }
+    });
+
+    async function addMessage() {
+      const name = (nameSelect.value || "").trim();
+      const text = (messageInput.value || "").trim();
+      if (!name || !text) return;
+      try {
+        await addDoc(messagesCol, {
+          name,
+          text,
+          time: serverTimestamp()
+        });
+        messageInput.value = "";
+        // enforce retention right after adding a new message
+        await enforceRetention();
+      } catch (err) {
+        alert("Failed to send message: " + err.message);
+      }
+    }
+
+    // -------------------- Clear messages (cloud) --------------------
+    clearBtn.addEventListener('click', async () => {
+      if (!confirm("Delete all messages from cloud? This cannot be undone.")) return;
+      try {
+        const snap = await getDocs(messagesCol);
+        const deletes = [];
+        snap.forEach(d => deletes.push(deleteDoc(doc(db, 'messages', d.id))));
+        await Promise.all(deletes);
+      } catch (err) {
+        alert("Failed to clear messages: " + err.message);
+      }
+    });
+
+    // -------------------- Bootstrap: use local names as fallback --------------------
+    (function init() {
+      const localNames = JSON.parse(localStorage.getItem('names') || 'null');
+      if (Array.isArray(localNames) && (!nameListInput.value)) {
+        nameListInput.value = localNames.join("\n");
+      }
+      if (Array.isArray(localNames)) populateNames(localNames);
+      // Firestore onSnapshot listeners will override/populate when cloud doc exists
+    })();
+  </script>
+
+</body>
+</html>
