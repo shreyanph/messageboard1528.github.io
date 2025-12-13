@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 600px;
+            max-width: 900px;
             margin: 40px auto;
             color: #ffffff;
             background-image: url("https://scx1.b-cdn.net/csz/news/800a/2023/data-science.jpg");
@@ -93,21 +93,68 @@
             opacity: 0.95;
             font-size: 0.95em;
         }
+
+        /* Two-column layout for How To Use + Name List */
+        .top-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .howto {
+            background: rgba(0,0,0,0.45);
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+        }
+
+        .howto p, .howto ol {
+            color: #ffffff;
+            margin: 6px 0;
+        }
+
+        /* Responsive: stack on narrow screens */
+        @media (max-width: 740px) {
+            .top-row {
+                grid-template-columns: 1fr;
+            }
+            body {
+                margin: 20px;
+            }
+        }
     </style>
 </head>
 <body>
 
-<h2>Name List</h2>
-<p style="margin-top:0;margin-bottom:6px;">
-    Type each name on its own line:
-</p>
-<textarea id="nameListInput" placeholder="Alice
+<div class="top-row">
+  <!-- NEW: How To Use section (left) -->
+  <div class="howto">
+    <h2 style="margin-top:0;margin-bottom:6px;">How To Use</h2>
+    <ol>
+      <li><u>1 person</u> should enter the names of all users who shall use this messaging platform and save it to the cloud using the "Save Names" button.</li>
+      <li>Each user should than use the dropdown menu in the "Message Board" section and select <u>their</u> name.</li>
+      <li>Each user can now use the text box bellow to send messages to one another, with auto generated separators &amp; timestamps.</li>
+    </ol>
+    <p>Thank you for using <em>Message Board</em>!</p>
+  </div>
+
+  <!-- Existing Name List (right) -->
+  <div>
+    <h2>Name List</h2>
+    <p style="margin-top:0;margin-bottom:6px;">
+        Type each name on its own line:
+    </p>
+    <textarea id="nameListInput" placeholder="Alice
 Bob
 Charlie"></textarea>
-<br>
-<button id="saveNamesBtn">Save Names</button>
+    <br>
+    <button id="saveNamesBtn">Save Names</button>
+  </div>
+</div>
 
-<h2 style="margin-top:20px;">Message Board</h2>
+<h2 style="margin-top:0;">Message Board</h2>
 
 <select id="nameSelect" required>
     <option value="" disabled selected>Select a name</option>
@@ -281,7 +328,7 @@ Charlie"></textarea>
     console.error("Realtime messages error:", err);
   });
 
-  // Render messages such that each timestamp separates authors and corresponds to the block BELOW it.
+  // Render messages such that each timestamp separates authors and corresponds to the block BELOW it
   function renderMessages(messages) {
     messagesDiv.innerHTML = "";
     if (messages.length === 0) return;
@@ -325,6 +372,23 @@ Charlie"></textarea>
     return row;
   }
 
+  // -------------------- Retention: auto-clear to keep last 10 if total > 100 --------------------
+  async function enforceRetention() {
+    try {
+      const snap = await getDocs(messagesQuery);
+      const total = snap.size;
+      if (total > 100) {
+        const numToDelete = total - 10;
+        // snap.docs is ordered ascending by time due to messagesQuery
+        const docsToDelete = snap.docs.slice(0, numToDelete);
+        const deletes = docsToDelete.map(d => deleteDoc(doc(db, 'messages', d.id)));
+        await Promise.all(deletes);
+      }
+    } catch (err) {
+      console.error('Retention enforcement failed:', err);
+    }
+  }
+
   // -------------------- Add message --------------------
   sendBtn.addEventListener('click', addMessage);
   messageInput.addEventListener('keydown', e => {
@@ -345,6 +409,8 @@ Charlie"></textarea>
         time: serverTimestamp()
       });
       messageInput.value = "";
+      // enforce retention right after adding a new message
+      await enforceRetention();
     } catch (err) {
       alert("Failed to send message: " + err.message);
     }
