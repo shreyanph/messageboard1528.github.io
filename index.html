@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>Local Message Board</title>
+    <title>Local Message Board (Cloud)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -119,205 +119,259 @@ Charlie"></textarea>
 <button id="sendBtn">Send</button>
 
 <h2>Message History</h2>
-<button id="clearBtn">Clear Message History</button>
+<button id="clearBtn">Clear Message History (cloud)</button>
 
 <div id="messages"></div>
 
-<script>
-    const messagesDiv = document.getElementById('messages');
-    const messageInput = document.getElementById('messageInput');
-    const nameSelect = document.getElementById('nameSelect');
-    const sendBtn = document.getElementById('sendBtn');
-    const clearBtn = document.getElementById('clearBtn');
+<!-- Firebase v12 modular SDK (script type=module) -->
+<script type="module">
+  // Firebase imports
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    serverTimestamp,
+    query,
+    orderBy,
+    onSnapshot,
+    setDoc,
+    doc,
+    deleteDoc,
+    getDocs
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-    const nameListInput = document.getElementById('nameListInput');
-    const saveNamesBtn = document.getElementById('saveNamesBtn');
+  // ---------- Paste your firebaseConfig object here (from Firebase console) ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyDP7gvu9KT8u37wNEFJ1BUPBBxGKiIUEo8",
+    authDomain: "message-history-2d3ab.firebaseapp.com",
+    projectId: "message-history-2d3ab",
+    storageBucket: "message-history-2d3ab.firebasestorage.app",
+    messagingSenderId: "258209489466",
+    appId: "1:258209489466:web:fae16998d2b8c161e6cb03",
+    measurementId: "G-X3LTVS01X8"
+  };
+  // -------------------------------------------------------------------------------
 
-    const colors = [
-        'rgba(0, 180, 0, 0.7)',     // Green
-        'rgba(255, 165, 0, 0.85)',  // Orange
-        'rgba(220, 20, 60, 0.85)',  // Red
-        'rgba(128, 0, 128, 0.85)',  // Purple
-        'rgba(255, 0, 255, 0.85)'   // Magenta
-    ];
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    function formatTimestamp(iso) {
-        const d = new Date(iso);
-        if (isNaN(d)) return "";
-        const month = d.getMonth() + 1;
-        const day = d.getDate();
-        const year = d.getFullYear();
+  // DOM refs
+  const nameListInput = document.getElementById('nameListInput');
+  const saveNamesBtn = document.getElementById('saveNamesBtn');
+  const nameSelect = document.getElementById('nameSelect');
+  const messageInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const messagesDiv = document.getElementById('messages');
 
-        let hour = d.getHours();
-        const minute = d.getMinutes().toString().padStart(2, '0');
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        hour = hour % 12;
-        if (hour === 0) hour = 12;
+  // color palette
+  const colors = [
+    'rgba(0, 180, 0, 0.7)',     // Green
+    'rgba(255, 165, 0, 0.85)',  // Orange
+    'rgba(220, 20, 60, 0.85)',  // Red
+    'rgba(128, 0, 128, 0.85)',  // Purple
+    'rgba(255, 0, 255, 0.85)'   // Magenta
+  ];
 
-        return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
+  // ---------- Utilities ----------
+  function parseNames(raw) {
+    return [...new Set(raw.split(/\r?\n|,/).map(s => s.trim()).filter(Boolean))];
+  }
+
+  // deterministic name -> color via hash so every device sees same mapping
+  function hashStringToIndex(s, mod) {
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) {
+      h = ((h << 5) + h) + s.charCodeAt(i);
+      h = h & 0xffffffff;
     }
+    return Math.abs(h) % mod;
+  }
+  function colorForName(name) {
+    const idx = hashStringToIndex(name.toLowerCase(), colors.length);
+    return colors[idx];
+  }
 
-    function loadMessages() {
-        const messages = JSON.parse(localStorage.getItem('messages')) || [];
-        let changed = false;
+  function formatTimestamp(thing) {
+    if (!thing) return "";
+    // thing might be Firestore Timestamp, ISO string, or Date
+    let d;
+    if (typeof thing === 'string') d = new Date(thing);
+    else if (thing && typeof thing.toDate === 'function') d = thing.toDate();
+    else if (thing instanceof Date) d = thing;
+    else d = new Date();
+    if (isNaN(d)) return "";
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+    const year = d.getFullYear();
+    let hour = d.getHours();
+    const minute = d.getMinutes().toString().padStart(2, '0');
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
+  }
 
-        // ensure each message has a timestamp
-        for (let i = 0; i < messages.length; i++) {
-            if (!messages[i].time) {
-                messages[i].time = new Date().toISOString();
-                changed = true;
-            }
-        }
-        if (changed) localStorage.setItem('messages', JSON.stringify(messages));
+  // -------------------- Names (meta/names doc) --------------------
+  const namesDocRef = doc(db, 'meta', 'names');
 
-        messagesDiv.innerHTML = "";
-
-        // Add a timestamp ABOVE the first message (if any)
-        if (messages.length > 0) {
-            const topTime = formatTimestamp(messages[0].time || new Date().toISOString());
-            const tsRowTop = document.createElement('div');
-            tsRowTop.className = 'timestamp-row';
-            const leftLineTop = document.createElement('div');
-            leftLineTop.className = 'line';
-            tsRowTop.appendChild(leftLineTop);
-            const tsTextTop = document.createElement('div');
-            tsTextTop.className = 'timestamp-text';
-            tsTextTop.textContent = topTime;
-            tsRowTop.appendChild(tsTextTop);
-            const rightLineTop = document.createElement('div');
-            rightLineTop.className = 'line';
-            tsRowTop.appendChild(rightLineTop);
-            messagesDiv.appendChild(tsRowTop);
-        }
-
-        messages.forEach((msg, index) => {
-            const div = document.createElement('div');
-            div.className = 'message';
-
-            const color = assignColorToName(msg.name);
-            div.style.background = color;
-
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'name';
-            nameSpan.textContent = msg.name + ': ';
-
-            div.appendChild(nameSpan);
-            div.appendChild(document.createTextNode(msg.text));
-            messagesDiv.appendChild(div);
-
-            // if next message is by a different author, add timestamp row for THIS message's time
-            if (index < messages.length - 1 && messages[index].name !== messages[index + 1].name) {
-                const timestamp = formatTimestamp(messages[index].time || new Date().toISOString());
-
-                const tsRow = document.createElement('div');
-                tsRow.className = 'timestamp-row';
-
-                const leftLine = document.createElement('div');
-                leftLine.className = 'line';
-                tsRow.appendChild(leftLine);
-
-                const tsText = document.createElement('div');
-                tsText.className = 'timestamp-text';
-                tsText.textContent = timestamp;
-                tsRow.appendChild(tsText);
-
-                const rightLine = document.createElement('div');
-                rightLine.className = 'line';
-                tsRow.appendChild(rightLine);
-
-                messagesDiv.appendChild(tsRow);
-            }
-        });
-
-        if (messagesDiv.lastElementChild) {
-            messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
+  // realtime listener for names (falls back to localStorage if not present)
+  onSnapshot(namesDocRef, snap => {
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && Array.isArray(data.list)) {
+        populateNames(data.list);
+        if (!nameListInput.value) nameListInput.value = data.list.join("\n");
+      }
+    } else {
+      const local = JSON.parse(localStorage.getItem('names') || 'null');
+      if (Array.isArray(local)) populateNames(local);
     }
+  }, err => {
+    const local = JSON.parse(localStorage.getItem('names') || 'null');
+    if (Array.isArray(local)) populateNames(local);
+  });
 
-    function addMessage() {
-        const name = nameSelect.value.trim();
-        const text = messageInput.value.trim();
-        if (!name || !text) return;
-
-        const messages = JSON.parse(localStorage.getItem('messages')) || [];
-        messages.push({ name, text, time: new Date().toISOString() });
-        localStorage.setItem('messages', JSON.stringify(messages));
-
-        messageInput.value = "";
-        loadMessages();
+  saveNamesBtn.addEventListener('click', async () => {
+    const names = parseNames(nameListInput.value || "");
+    try {
+      await setDoc(namesDocRef, { list: names });
+      localStorage.setItem('names', JSON.stringify(names));
+    } catch (err) {
+      alert("Failed to save names to cloud: " + err.message);
     }
+  });
 
-    function clearMessages() {
-        localStorage.removeItem('messages');
-        loadMessages();
-    }
+  function populateNames(names) {
+    localStorage.setItem('names', JSON.stringify(names));
+    nameSelect.innerHTML = "";
+    const placeholder = document.createElement('option');
+    placeholder.value = "";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    placeholder.textContent = "Select a name";
+    nameSelect.appendChild(placeholder);
+    names.forEach(n => {
+      const opt = document.createElement('option');
+      opt.value = n;
+      opt.textContent = n;
+      nameSelect.appendChild(opt);
+    });
+  }
 
-    function parseNames(raw) {
-        return [...new Set(
-            raw.split(/\r?\n|,/).map(n => n.trim()).filter(Boolean)
-        )];
-    }
+  // -------------------- Messages (collection: messages) --------------------
+  const messagesCol = collection(db, 'messages');
+  const messagesQuery = query(messagesCol, orderBy('time', 'asc'));
 
-    function saveNames() {
-        const names = parseNames(nameListInput.value);
-        localStorage.setItem('names', JSON.stringify(names));
-        names.forEach(assignColorToName);
-        loadNames();
-    }
+  // realtime listener for messages
+  onSnapshot(messagesQuery, snapshot => {
+    const msgs = [];
+    snapshot.forEach(docSnap => {
+      const d = docSnap.data();
+      msgs.push({
+        id: docSnap.id,
+        name: d.name,
+        text: d.text || "",
+        time: d.time || null
+      });
+    });
+    renderMessages(msgs);
+  }, err => {
+    console.error("Realtime messages error:", err);
+  });
 
-    function loadNames() {
-        const names = JSON.parse(localStorage.getItem('names')) || [];
-        nameSelect.innerHTML = "";
+  // Render messages such that each timestamp separates authors and corresponds to the block BELOW it.
+  function renderMessages(messages) {
+    messagesDiv.innerHTML = "";
+    if (messages.length === 0) return;
 
-        const placeholder = document.createElement('option');
-        placeholder.value = "";
-        placeholder.disabled = true;
-        placeholder.selected = true;
-        placeholder.textContent = "Select a name";
-        nameSelect.appendChild(placeholder);
+    // Top timestamp corresponds to the first message's time (labels the block below)
+    const topTime = formatTimestamp(messages[0].time);
+    messagesDiv.appendChild(createTimestampRow(topTime));
 
-        names.forEach(name => {
-            assignColorToName(name);
-            const opt = document.createElement('option');
-            opt.value = name;
-            opt.textContent = name;
-            nameSelect.appendChild(opt);
-        });
+    messages.forEach((m, i) => {
+      const div = document.createElement('div');
+      div.className = 'message';
+      div.style.background = colorForName(m.name);
 
-        if (!nameListInput.value && names.length) {
-            nameListInput.value = names.join("\n");
-        }
-    }
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'name';
+      nameSpan.textContent = m.name + ': ';
 
-    function assignColorToName(name) {
-        const map = JSON.parse(localStorage.getItem('nameColorMap')) || {};
-        if (map[name]) return map[name];
+      div.appendChild(nameSpan);
+      div.appendChild(document.createTextNode(m.text));
+      messagesDiv.appendChild(div);
 
-        const counts = colors.map(() => 0);
-        Object.values(map).forEach(c => {
-            const i = colors.indexOf(c);
-            if (i !== -1) counts[i]++;
-        });
-
-        const idx = counts.indexOf(Math.min(...counts));
-        map[name] = colors[idx];
-        localStorage.setItem('nameColorMap', JSON.stringify(map));
-        return map[name];
-    }
-
-    messageInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            addMessage();
-        }
+      // If next message author differs, insert timestamp that corresponds to the messages below (use next message's time)
+      if (i < messages.length - 1 && messages[i].name !== messages[i + 1].name) {
+        const nextTime = formatTimestamp(messages[i + 1].time);
+        messagesDiv.appendChild(createTimestampRow(nextTime));
+      }
     });
 
-    sendBtn.addEventListener('click', addMessage);
-    clearBtn.addEventListener('click', clearMessages);
-    saveNamesBtn.addEventListener('click', saveNames);
+    if (messagesDiv.lastElementChild) {
+      messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }
 
-    loadNames();
-    loadMessages();
+  function createTimestampRow(text) {
+    const row = document.createElement('div');
+    row.className = 'timestamp-row';
+    const left = document.createElement('div'); left.className = 'line';
+    const mid = document.createElement('div'); mid.className = 'timestamp-text'; mid.textContent = text || '';
+    const right = document.createElement('div'); right.className = 'line';
+    row.appendChild(left); row.appendChild(mid); row.appendChild(right);
+    return row;
+  }
+
+  // -------------------- Add message --------------------
+  sendBtn.addEventListener('click', addMessage);
+  messageInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      addMessage();
+    }
+  });
+
+  async function addMessage() {
+    const name = (nameSelect.value || "").trim();
+    const text = (messageInput.value || "").trim();
+    if (!name || !text) return;
+    try {
+      await addDoc(messagesCol, {
+        name,
+        text,
+        time: serverTimestamp()
+      });
+      messageInput.value = "";
+    } catch (err) {
+      alert("Failed to send message: " + err.message);
+    }
+  }
+
+  // -------------------- Clear messages (cloud) --------------------
+  clearBtn.addEventListener('click', async () => {
+    if (!confirm("Delete all messages from cloud? This cannot be undone.")) return;
+    try {
+      const snap = await getDocs(messagesCol);
+      const deletes = [];
+      snap.forEach(d => deletes.push(deleteDoc(doc(db, 'messages', d.id))));
+      await Promise.all(deletes);
+    } catch (err) {
+      alert("Failed to clear messages: " + err.message);
+    }
+  });
+
+  // -------------------- Bootstrap: use local names as fallback --------------------
+  (function init() {
+    const localNames = JSON.parse(localStorage.getItem('names') || 'null');
+    if (Array.isArray(localNames) && (!nameListInput.value)) {
+      nameListInput.value = localNames.join("\n");
+    }
+    if (Array.isArray(localNames)) populateNames(localNames);
+    // Firestore onSnapshot listeners will override/populate when cloud doc exists
+  })();
 </script>
 
 </body>
