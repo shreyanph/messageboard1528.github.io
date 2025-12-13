@@ -4,12 +4,11 @@
     <meta charset="UTF-8" />
     <title>Local Message Board</title>
     <style>
-        /* Background image (user-provided) */
         body {
             font-family: Arial, sans-serif;
             max-width: 600px;
             margin: 40px auto;
-            color: #ffffff; /* main text color = white for dark theme */
+            color: #ffffff;
             background-image: url("https://scx1.b-cdn.net/csz/news/800a/2023/data-science.jpg");
             background-size: cover;
             background-position: center;
@@ -21,7 +20,6 @@
             color: #ffffff;
         }
 
-        /* Inputs and textareas: white text on a darker translucent background */
         input, textarea {
             width: 100%;
             box-sizing: border-box;
@@ -36,7 +34,6 @@
             resize: vertical;
         }
 
-        /* Buttons: dark translucent background with white text */
         button {
             margin-top: 10px;
             color: #ffffff;
@@ -46,36 +43,37 @@
             cursor: pointer;
         }
 
-        /* Message block */
+        /* Message bubble */
         .message {
-            padding: 8px 0;
-            color: #ffffff; /* ensure message text is white */
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin: 6px 0;
+            color: #ffffff;
+            max-width: 100%;
         }
 
-        /* When two .message elements are adjacent (same author) make them a little closer together */
+        /* Same-author messages closer together */
         .message + .message {
-            padding-top: 4px;
-            padding-bottom: 4px;
+            margin-top: 3px;
         }
 
-        /* Divider inserted between different authors */
+        /* Divider between different authors */
         .divider {
             border-bottom: 1px solid rgba(255,255,255,0.25);
-            margin: 6px 0;
+            margin: 8px 0;
         }
 
         .name {
             font-weight: bold;
             margin-right: 6px;
-            color: #ffffff; /* ensure name is white */
+            color: #ffffff;
         }
 
         #messages {
             margin-top: 10px;
         }
 
-        /* Small readability tweak so content stands out slightly from busy background */
-        /* Not changing layout or behavior — just a subtle backdrop for the message area */
         #messages, input, textarea {
             backdrop-filter: blur(2px);
         }
@@ -109,7 +107,6 @@
         messagesDiv.innerHTML = "";
 
         messages.forEach((msg, index) => {
-            // Message element
             const div = document.createElement('div');
             div.className = 'message';
 
@@ -121,7 +118,6 @@
             div.appendChild(document.createTextNode(msg.text));
             messagesDiv.appendChild(div);
 
-            // Add divider AFTER this message if the next message is from a different person
             if (index < messages.length - 1 && messages[index].name !== messages[index + 1].name) {
                 const divider = document.createElement('div');
                 divider.className = 'divider';
@@ -129,7 +125,6 @@
             }
         });
 
-        // Keep view scrolled to the last message for convenience
         if (messagesDiv.lastElementChild) {
             messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
@@ -154,7 +149,6 @@
         loadMessages();
     }
 
-    // Enter to send; Shift+Enter inserts newline
     messageInput.addEventListener('keydown', function (event) {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -165,7 +159,6 @@
     sendBtn.addEventListener('click', addMessage);
     clearBtn.addEventListener('click', clearMessages);
 
-    // Initial load
     loadMessages();
 </script>
 
