@@ -9,8 +9,11 @@
             max-width: 600px;
             margin: 40px auto;
         }
-        textarea {
+        input, textarea {
             width: 100%;
+            box-sizing: border-box;
+        }
+        textarea {
             height: 80px;
         }
         button {
@@ -20,11 +23,17 @@
             border-bottom: 1px solid #ccc;
             padding: 8px 0;
         }
+        .name {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
 <h2>Message Board</h2>
+
+<input id="nameInput" type="text" placeholder="Your name" required>
+<br><br>
 
 <textarea id="messageInput" placeholder="Type a message..."></textarea>
 <br>
@@ -35,31 +44,47 @@
 
 <script>
     const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
 
     function loadMessages() {
         const messages = JSON.parse(localStorage.getItem("messages")) || [];
         messagesDiv.innerHTML = "";
-        messages.forEach(msg => {
+        messages.forEach(({ name, text }) => {
             const div = document.createElement("div");
             div.className = "message";
-            div.textContent = msg;
+
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "name";
+            nameSpan.textContent = name + ": ";
+
+            div.appendChild(nameSpan);
+            div.appendChild(document.createTextNode(text));
+
             messagesDiv.appendChild(div);
         });
     }
 
     function addMessage() {
-        const input = document.getElementById("messageInput");
-        const text = input.value.trim();
+        const name = document.getElementById("nameInput").value.trim();
+        const text = messageInput.value.trim();
 
-        if (text === "") return;
+        if (!name || !text) return;
 
         const messages = JSON.parse(localStorage.getItem("messages")) || [];
-        messages.push(text);
+        messages.push({ name, text });
         localStorage.setItem("messages", JSON.stringify(messages));
 
-        input.value = "";
+        messageInput.value = "";
         loadMessages();
     }
+
+    // Press Enter to send (Shift+Enter for new line)
+    messageInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            addMessage();
+        }
+    });
 
     loadMessages();
 </script>
