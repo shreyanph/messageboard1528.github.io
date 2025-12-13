@@ -45,13 +45,15 @@
 
         /* Message bubble */
         .message {
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 12px;
-            padding: 10px 12px;
+            background: rgba(0, 180, 0, 0.7); /* green bubble */
+            border-radius: 999px;            /* makes it oval */
+            padding: 10px 16px;              /* extra horizontal padding */
             margin: 6px 0;
             color: #ffffff;
+            display: inline-block;           /* keeps bubble sized to text */
             max-width: 100%;
         }
+
 
         /* Same-author messages closer together */
         .message + .message {
@@ -164,3 +166,4 @@
 
 </body>
 </html>
+
