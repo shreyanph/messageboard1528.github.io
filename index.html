@@ -9,20 +9,32 @@
             max-width: 600px;
             margin: 40px auto;
         }
+
+        h2 {
+            margin-bottom: 10px;
+        }
+
         input, textarea {
             width: 100%;
             box-sizing: border-box;
         }
+
         textarea {
             height: 80px;
         }
+
         button {
             margin-top: 10px;
         }
+
         .message {
-            border-bottom: 1px solid #ccc;
             padding: 8px 0;
         }
+
+        .divider {
+            border-bottom: 1px solid #ccc;
+        }
+
         .name {
             font-weight: bold;
         }
@@ -39,7 +51,10 @@
 <br>
 <button onclick="addMessage()">Send</button>
 
-<h3>Message History</h3>
+<h2>Message History</h2>
+
+<button onclick="clearMessages()">Clear Message History</button>
+
 <div id="messages"></div>
 
 <script>
@@ -49,16 +64,22 @@
     function loadMessages() {
         const messages = JSON.parse(localStorage.getItem("messages")) || [];
         messagesDiv.innerHTML = "";
-        messages.forEach(({ name, text }) => {
+
+        messages.forEach((msg, index) => {
             const div = document.createElement("div");
             div.className = "message";
 
+            // Add divider ONLY if previous message is from a different person
+            if (index > 0 && messages[index - 1].name !== msg.name) {
+                div.classList.add("divider");
+            }
+
             const nameSpan = document.createElement("span");
             nameSpan.className = "name";
-            nameSpan.textContent = name + ": ";
+            nameSpan.textContent = msg.name + ": ";
 
             div.appendChild(nameSpan);
-            div.appendChild(document.createTextNode(text));
+            div.appendChild(document.createTextNode(msg.text));
 
             messagesDiv.appendChild(div);
         });
@@ -78,7 +99,11 @@
         loadMessages();
     }
 
-    // Press Enter to send (Shift+Enter for new line)
+    function clearMessages() {
+        localStorage.removeItem("messages");
+        loadMessages();
+    }
+
     messageInput.addEventListener("keydown", function (event) {
         if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
