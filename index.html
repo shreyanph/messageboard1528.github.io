@@ -5,7 +5,7 @@
   <title>Message Board</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    /* PAGE BACKGROUND: full viewport so login overlay/background fills screen */
+    /* PAGE BACKGROUND */
     body {
       font-family: Arial, sans-serif;
       min-height: 100vh;
@@ -18,13 +18,27 @@
       position: relative;
     }
 
-    /* center content area */
+    /* main page inner (center column) */
     .page-inner {
       position: relative;
       max-width: 600px;
       margin: 40px auto;
       padding: 12px;
       box-sizing: border-box;
+    }
+
+    /* How To Use button (top-left relative to page-inner) */
+    #howBtn {
+      position: absolute;
+      top: -12px;
+      left: -160px;
+      z-index: 30;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 10px;
+      border-radius: 6px;
+      pointer-events: auto;
+      color: #fff;
     }
 
     h2 { margin-bottom: 10px; color: #ffffff; }
@@ -48,21 +62,20 @@
       cursor: pointer;
     }
 
-    /* messages container: stack children vertically */
+    /* messages container: vertical stack */
     #messages {
       margin-top: 10px;
       display: flex;
       flex-direction: column;
-      gap: 10px;              /* vertical spacing between rows (bubbles / timestamp rows) */
+      gap: 10px;
     }
 
-    /* message bubble: inline-block so content sizes naturally, but each bubble becomes its own flex row child */
+    /* message bubble */
     .message {
       border-radius: 999px;
       padding: 10px 16px;
-      /* no margin here because #messages gap handles spacing */
       display: inline-block;
-      align-self: flex-start;  /* ensure bubble stays left-aligned; admin could be same style */
+      align-self: flex-start; /* left-aligned */
       max-width: 100%;
       color: #ffffff;
       line-height: 1.25;
@@ -97,7 +110,7 @@
       font-size: 0.95em;
     }
 
-    /* Login overlay */
+    /* Login overlay (full screen) */
     #loginOverlay {
       position: fixed;
       left: 0;
@@ -154,17 +167,75 @@
     .remove-account { background: rgba(255,255,255,0.06); border: none; color: #fff; padding: 4px 8px; border-radius:6px; cursor:pointer; }
     .remove-account.disabled { opacity: 0.45; cursor: not-allowed; background: rgba(255,255,255,0.02); }
 
+    /* Emoji row: ensure textarea and button are in same row */
+    .emoji-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .emoji-row textarea { width: auto; flex: 1 1 auto; min-height: 44px; }
+    #emojiBtn {
+      min-width: 44px;
+      height: 44px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .emoji-picker {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: rgba(0,0,0,0.95);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 8px;
+      border-radius: 8px;
+      z-index: 200;
+      width: max-content;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      display: none;
+    }
+    .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+    .emoji-btn { background: transparent; border: none; font-size: 20px; padding: 6px; cursor: pointer; border-radius: 6px; color: #fff; }
+    .emoji-btn:hover { background: rgba(255,255,255,0.06); }
+
     /* Password area */
     #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
     #passwordArea input[type="password"] { flex:1; padding:8px; }
 
     button[disabled] { opacity: 0.45; cursor: not-allowed; }
 
+    /* How modal */
+    .how-modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .how-modal {
+      max-width: 560px;
+      width: 100%;
+      background: rgba(0,0,0,0.8);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 16px;
+      border-radius: 8px;
+      color: #fff;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    .how-modal h3 { margin-top:0; }
+    .how-modal .close { position: absolute; right: 8px; top: 8px; background: transparent; border: none; color: #fff; font-size: 18px; cursor: pointer; padding: 4px; }
+
     @media (max-width: 640px) {
       .page-inner { margin: 20px; max-width: 100%; }
       .login-card { min-width: 260px; padding: 18px; }
       .account-btn { width: 220px; }
       #adminPanel { width: calc(100% - 32px); }
+      .emoji-grid { grid-template-columns: repeat(6, 1fr); }
     }
   </style>
 </head>
@@ -180,6 +251,7 @@
       <!-- Password prompt -->
       <div id="passwordArea" aria-hidden="true">
         <div id="pwPromptText" style="margin-bottom:4px; color:rgba(255,255,255,0.9); font-size:0.95em;"></div>
+
         <div id="enterPw" style="display:none; gap:8px; flex-direction:column;">
           <input id="passwordInput" type="password" placeholder="Password" autocomplete="new-password" />
           <div style="display:flex; gap:8px;">
@@ -187,6 +259,7 @@
             <button id="cancelPwBtn" style="background:rgba(255,255,255,0.06); color:#fff;">Cancel</button>
           </div>
         </div>
+
         <div id="createPw" style="display:none; gap:8px; flex-direction:column;">
           <input id="newPasswordInput" type="password" placeholder="New password" />
           <input id="newPasswordRetype" type="password" placeholder="Retype new password" />
@@ -202,6 +275,10 @@
   </div>
 
   <div class="page-inner">
+    <!-- How To Use button -->
+    <button id="howBtn">How To Use</button>
+
+    <!-- Admin panel (centered) -->
     <div id="adminPanel" aria-hidden="true">
       <h4>Accounts (cloud)</h4>
       <div style="display:flex; gap:8px;">
@@ -218,10 +295,13 @@
     </select>
     <br><br>
 
-    <div class="emoji-row" id="emojiRow">
+    <!-- emoji-row: textarea + emoji button on same row -->
+    <div class="emoji-row" id="emojiRow" style="position:relative;">
       <textarea id="messageInput" placeholder="Type a message..."></textarea>
       <button id="emojiBtn" type="button" title="Insert emoji">😊</button>
-      <div id="emojiPicker" class="emoji-picker" aria-hidden="true" style="display:none;">
+
+      <!-- emoji picker -->
+      <div id="emojiPicker" class="emoji-picker" aria-hidden="true">
         <div class="emoji-grid" id="emojiGrid"></div>
       </div>
     </div>
@@ -233,6 +313,20 @@
     <button id="clearBtn" title="Only Administrator may clear history">Clear Message History (cloud)</button>
 
     <div id="messages" aria-live="polite"></div>
+  </div>
+
+  <!-- How To Use modal -->
+  <div id="howBackdrop" class="how-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="how-modal" role="document">
+      <button class="close" id="howClose" aria-label="Close">&times;</button>
+      <h3>How To Use</h3>
+      <ol>
+        <li><u>Administrator</u> creates accounts (Admin panel) and manages them in the cloud.</li>
+        <li>Users sign in from the lock screen. If a password doesn't exist, they are prompted to create one.</li>
+        <li>Non-admins may only send messages as their signed-in account. Admin may send as any name.</li>
+      </ol>
+      <p>Thanks for using Message Board!</p>
+    </div>
   </div>
 
   <script type="module">
@@ -294,7 +388,18 @@
     const cancelCreateBtn = document.getElementById('cancelCreateBtn');
     const loginHint = document.getElementById('loginHint');
 
-    // hide UI until login
+    // emoji UI refs
+    const emojiBtn = document.getElementById('emojiBtn');
+    const emojiPicker = document.getElementById('emojiPicker');
+    const emojiGrid = document.getElementById('emojiGrid');
+    const emojiRow = document.getElementById('emojiRow');
+
+    // How modal refs
+    const howBtn = document.getElementById('howBtn');
+    const howBackdrop = document.getElementById('howBackdrop');
+    const howClose = document.getElementById('howClose');
+
+    // hide page until login
     pageInner.style.display = 'none';
 
     // cloud refs
@@ -311,6 +416,7 @@
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    // ensure Administrator exists in cloud (if possible)
     (async function ensureAdminPresent() {
       try {
         const snap = await getDoc(accountsDocRef);
@@ -329,7 +435,7 @@
       }
     })();
 
-    // accounts listener
+    // realtime accounts listener -> populates login overlay and admin panel & nameSelect
     onSnapshot(accountsDocRef, snap => {
       const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
       populateAccounts(list);
@@ -466,7 +572,7 @@
       }
     });
 
-    // login state and password flow
+    // login & password flow
     let currentUser = null;
     const passwordFlow = { active: false, account: null, mode: null };
 
@@ -505,9 +611,6 @@
       }
     }
 
-    cancelPwBtn.addEventListener('click', endPasswordFlow);
-    cancelCreateBtn.addEventListener('click', endPasswordFlow);
-
     function endPasswordFlow() {
       passwordFlow.active = false;
       passwordFlow.account = null;
@@ -520,7 +623,10 @@
       pwPromptText.textContent = '';
     }
 
-    createPwBtn.addEventListener('click', async () => {
+    document.getElementById('cancelPwBtn').addEventListener('click', endPasswordFlow);
+    document.getElementById('cancelCreateBtn').addEventListener('click', endPasswordFlow);
+
+    document.getElementById('createPwBtn').addEventListener('click', async () => {
       const p1 = (newPasswordInput.value || '').trim();
       const p2 = (newPasswordRetype.value || '').trim();
       if (!p1 || !p2) { alert('Please enter and retype the new password.'); return; }
@@ -538,7 +644,6 @@
       }
     });
 
-    const submitPwBtn = document.getElementById('submitPwBtn');
     submitPwBtn.addEventListener('click', async () => {
       const p = (passwordInput.value || '').trim();
       if (!p) { alert('Please enter your password.'); return; }
@@ -612,7 +717,6 @@
       avatarCircle.textContent = '';
       loginHint.textContent = 'Hover an account to preview initial, click to sign in';
       pwPromptText.textContent = '';
-
       updateClearButtonState();
     }
 
@@ -652,11 +756,7 @@
         // wrapper bubble
         const div = document.createElement('div');
         div.className = 'message';
-        try {
-          div.style.background = colorForName(who);
-        } catch (e) {
-          div.style.background = 'rgba(0,0,0,0.45)';
-        }
+        try { div.style.background = colorForName(who); } catch (e) { div.style.background = 'rgba(0,0,0,0.45)'; }
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'name';
@@ -670,7 +770,6 @@
         div.appendChild(contentSpan);
         messagesDiv.appendChild(div);
 
-        // if next author differs, add timestamp row after this bubble for the next block
         if (i < messages.length - 1 && messages[i].name !== messages[i + 1].name) {
           const nextTime = formatTimestamp(messages[i + 1].time);
           messagesDiv.appendChild(createTimestampRow(nextTime));
@@ -712,13 +811,13 @@
       return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
     }
 
-    // color palette and hash
+    // color palette and deterministic hash
     const colors = [
-      'rgba(0, 180, 0, 0.7)',
-      'rgba(255, 165, 0, 0.85)',
-      'rgba(220, 20, 60, 0.85)',
-      'rgba(128, 0, 128, 0.85)',
-      'rgba(255, 0, 255, 0.85)'
+      'rgba(0, 180, 0, 0.85)',
+      'rgba(255, 165, 0, 0.95)',
+      'rgba(220, 20, 60, 0.95)',
+      'rgba(128, 0, 128, 0.95)',
+      'rgba(255, 0, 255, 0.95)'
     ];
     function hashStringToIndex(s, mod) {
       let h = 5381;
@@ -749,7 +848,7 @@
       }
     }
 
-    // send message
+    // send message (respect sign-in restrictions)
     sendBtn.addEventListener('click', addMessage);
     messageInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -760,19 +859,12 @@
 
     async function addMessage() {
       let sendName;
-      if (currentUser && currentUser !== ADMIN_NAME) {
-        sendName = currentUser;
-      } else {
-        sendName = (nameSelect.value || "").trim();
-      }
+      if (currentUser && currentUser !== ADMIN_NAME) sendName = currentUser;
+      else sendName = (nameSelect.value || "").trim();
       const text = (messageInput.value || "").trim();
       if (!sendName || !text) return;
       try {
-        await addDoc(collection(db, 'messages'), {
-          name: sendName,
-          text,
-          time: serverTimestamp()
-        });
+        await addDoc(collection(db, 'messages'), { name: sendName, text, time: serverTimestamp() });
         messageInput.value = "";
         await enforceRetention();
       } catch (err) {
@@ -780,7 +872,7 @@
       }
     }
 
-    // CLEAR button: only admin allowed
+    // clear button state & handler (admin only)
     function updateClearButtonState() {
       if (currentUser === ADMIN_NAME) {
         clearBtn.disabled = false;
@@ -808,13 +900,51 @@
       }
     });
 
-    // accounts/passwords: create & verify (same pattern as before)
-    (function initAccounts() {
-      // accounts onSnapshot will populate UI
-    })();
+    // Emoji picker setup
+    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🙂","😉","😊","😍","😎","🤔","🙏","👍","👀","🎉","🔥","💀","😭","😜","🤩","😇","🤖","🫶","😴","🤝","👏","🤷","🙌","💯","✨"];
+    emojis.forEach(e => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'emoji-btn';
+      b.textContent = e;
+      b.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        insertEmojiAtCursor(messageInput, e);
+        emojiPicker.style.display = 'none';
+        messageInput.focus();
+      });
+      emojiGrid.appendChild(b);
+    });
 
-    // initial clear button state
-    updateClearButtonState();
+    emojiBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      emojiPicker.style.display = (emojiPicker.style.display === 'block') ? 'none' : 'block';
+    });
+    document.addEventListener('click', (e) => {
+      if (!emojiRow.contains(e.target)) emojiPicker.style.display = 'none';
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') emojiPicker.style.display = 'none'; });
+
+    function insertEmojiAtCursor(textarea, emoji) {
+      const start = textarea.selectionStart || 0;
+      const end = textarea.selectionEnd || 0;
+      const val = textarea.value;
+      textarea.value = val.slice(0, start) + emoji + val.slice(end);
+      const pos = start + emoji.length;
+      textarea.selectionStart = textarea.selectionEnd = pos;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // How modal handlers
+    howBtn.addEventListener('click', () => { howBackdrop.style.display = 'flex'; });
+    howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
+    howBackdrop.addEventListener('click', e => { if (e.target === howBackdrop) howBackdrop.style.display = 'none'; });
+
+    // init placeholder
+    (function init() {
+      updateClearButtonState();
+      // accounts onSnapshot will populate login UI
+    })();
   </script>
 </body>
 </html>
