@@ -27,12 +27,12 @@
       box-sizing: border-box;
     }
 
-    /* How To Use button (top-left relative to page-inner) */
+    /* How To Use button (moved to fixed left, same Y as Sign Out) */
     #howBtn {
-      position: absolute;
-      top: -12px;
-      left: -160px;
-      z-index: 30;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 5000;
       background: rgba(0,0,0,0.7);
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
@@ -251,6 +251,9 @@
       .account-btn { width: 220px; }
       #adminPanel { width: calc(100% - 32px); }
       .emoji-grid { grid-template-columns: repeat(6, 1fr); }
+      /* keep buttons visible on small screens */
+      #howBtn { left: 8px; top: 12px; }
+      #signOutBtn { right: 8px; top: 12px; }
     }
   </style>
 </head>
@@ -756,7 +759,7 @@
       loginHint.textContent = 'Hover an account to preview initial, click to sign in';
       pwPromptText.textContent = '';
 
-      // *** FIX: explicitly show sign out with a concrete display style
+      // show sign out
       signOutBtn.style.display = 'inline-block';
 
       updateClearButtonState();
