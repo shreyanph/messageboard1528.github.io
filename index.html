@@ -192,10 +192,13 @@
             padding: 4px;
         }
 
-        /* Login overlay (GDM3-like) */
+        /* Login overlay (GDM3-like) - now explicitly full viewport */
         #loginOverlay {
             position: fixed;
-            inset: 0;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -231,7 +234,7 @@
             color: #fff;
             opacity: 0.95;
         }
-        .user-button {
+        .account-btn {
             width: 260px;
             display: flex;
             align-items: center;
@@ -244,9 +247,29 @@
             cursor: pointer;
             font-size: 16px;
         }
-        .user-button:hover {
+        .account-btn:hover {
             background: rgba(255,255,255,0.06);
         }
+
+        /* Admin panel (top-right) — hidden until Administrator logs in */
+        #adminPanel {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 500;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 10px;
+            border-radius: 8px;
+            width: 260px;
+            color: #fff;
+            display: none; /* shown only for Administrator */
+        }
+        #adminPanel h4 { margin: 6px 0; font-size: 14px; }
+        #accountsList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
+        #accountsList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
+        .remove-account { background: rgba(255,255,255,0.06); border: none; color: #fff; padding: 4px 8px; border-radius:6px; cursor:pointer; }
+        .remove-account:hover { background: rgba(255,255,255,0.12); }
 
         /* Responsive fallback */
         @media (max-width: 640px) {
@@ -256,7 +279,8 @@
             .emoji-picker { right: 0; left: 0; width: auto; }
             .emoji-grid { grid-template-columns: repeat(6, 1fr); }
             .login-card { min-width: 260px; padding: 18px; }
-            .user-button { width: 220px; }
+            .account-btn { width: 220px; }
+            #adminPanel { width: 200px; right: 8px; top: 8px; }
         }
     </style>
 </head>
@@ -265,17 +289,26 @@
   <div id="loginOverlay" role="dialog" aria-modal="true" aria-label="Login">
     <div class="login-card" role="presentation">
       <div class="avatar" aria-hidden="true">A</div>
-      <div class="login-title">Select a user to sign in</div>
+      <div class="login-title">Select an account to sign in</div>
 
-      <!-- Administrator user button (press to continue) -->
-      <button id="adminBtn" class="user-button" type="button" aria-label="Sign in as Administrator">
-        <span style="font-weight:700;">Administrator</span>
-      </button>
+      <!-- Dynamic list of accounts from cloud -->
+      <div id="accountButtons" style="display:flex; flex-direction:column; gap:8px; align-items:center; width:100%;"></div>
+
       <div style="font-size:0.85em; color:rgba(255,255,255,0.75);">Click the account to continue</div>
     </div>
   </div>
 
   <div class="page-inner">
+    <!-- Admin panel (top-right) - visible only to Administrator after login -->
+    <div id="adminPanel" aria-hidden="true">
+      <h4>Accounts (cloud)</h4>
+      <div style="display:flex; gap:8px;">
+        <input id="newAccountInput" placeholder="New account name" style="flex:1; padding:6px;" />
+        <button id="addAccountBtn" style="padding:6px 8px;">Add</button>
+      </div>
+      <ul id="accountsList" aria-live="polite"></ul>
+    </div>
+
     <!-- How To Use button at top-left -->
     <button id="howBtn" title="How To Use">How To Use</button>
 
@@ -350,7 +383,8 @@ Charlie"></textarea>
       setDoc,
       doc,
       deleteDoc,
-      getDocs
+      getDocs,
+      getDoc
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
     // ---------- Paste your firebaseConfig object here (from Firebase console) ----------
@@ -390,22 +424,143 @@ Charlie"></textarea>
 
     // LOGIN overlay refs + initial hide of page-inner
     const loginOverlay = document.getElementById('loginOverlay');
-    const adminBtn = document.getElementById('adminBtn');
+    const accountButtons = document.getElementById('accountButtons');
     const pageInner = document.querySelector('.page-inner');
+    const adminPanel = document.getElementById('adminPanel');
+    const newAccountInput = document.getElementById('newAccountInput');
+    const addAccountBtn = document.getElementById('addAccountBtn');
+    const accountsList = document.getElementById('accountsList');
+
     // hide the message-board UI until login
     pageInner.style.display = 'none';
 
+    // ---------- accounts doc ref (cloud) ----------
+    const accountsDocRef = doc(db, 'meta', 'accounts');
+
+    // Ensure accounts doc exists (seed Administrator) if not present
+    (async function seedAccountsIfMissing() {
+      try {
+        const snap = await getDoc(accountsDocRef);
+        if (!snap.exists()) {
+          await setDoc(accountsDocRef, { list: ['Administrator'] });
+        }
+      } catch (err) {
+        // ignore: if permissions prevent write, onSnapshot below will handle empty state
+        console.warn("Could not seed accounts (permission or offline):", err?.message);
+      }
+    })();
+
+    // Real-time listener for accounts — updates login screen and admin panel
+    onSnapshot(accountsDocRef, snap => {
+      const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+      populateAccounts(list);
+    }, err => {
+      console.error('Accounts listener error (continuing with empty list):', err);
+      populateAccounts([]);
+    });
+
+    function populateAccounts(list) {
+      // Build login overlay account buttons
+      accountButtons.innerHTML = "";
+      if (!Array.isArray(list) || list.length === 0) {
+        // Fallback single Administrator UI if empty list
+        appendAccountButton('Administrator');
+      } else {
+        list.forEach(name => appendAccountButton(name));
+      }
+
+      // Build admin panel list
+      accountsList.innerHTML = "";
+      if (Array.isArray(list)) {
+        list.forEach(name => {
+          const li = document.createElement('li');
+          li.textContent = name;
+          const rm = document.createElement('button');
+          rm.className = 'remove-account';
+          rm.textContent = 'Remove';
+          rm.addEventListener('click', async () => {
+            if (!confirm(`Remove account "${name}" from cloud? This will remove it for everyone.`)) return;
+            try {
+              const updated = list.filter(n => n !== name);
+              await setDoc(accountsDocRef, { list: updated });
+            } catch (err) {
+              alert('Failed to remove account: ' + err.message);
+            }
+          });
+          li.appendChild(rm);
+          accountsList.appendChild(li);
+        });
+      }
+    }
+
+    function appendAccountButton(name) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'account-btn';
+      b.textContent = name;
+      b.addEventListener('click', () => {
+        // sign in as this account
+        loginAs(name);
+      });
+      accountButtons.appendChild(b);
+    }
+
+    // Add account button handler (admin panel)
+    addAccountBtn.addEventListener('click', async () => {
+      const v = (newAccountInput.value || "").trim();
+      if (!v) return;
+      try {
+        // fetch current snapshot (to avoid clobbering)
+        const snap = await getDoc(accountsDocRef);
+        const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+        if (existing.includes(v)) {
+          alert('Account already exists.');
+          return;
+        }
+        const updated = [...existing, v];
+        await setDoc(accountsDocRef, { list: updated });
+        newAccountInput.value = '';
+      } catch (err) {
+        alert('Failed to add account: ' + err.message);
+      }
+    });
+
+    // login state
+    let currentUser = null;
+    function loginAs(accountName) {
+      currentUser = accountName;
+      // hide overlay, show page
+      loginOverlay.style.display = 'none';
+      pageInner.style.display = '';
+      // show admin panel only for Administrator
+      if (currentUser === 'Administrator') {
+        adminPanel.style.display = 'block';
+        adminPanel.setAttribute('aria-hidden', 'false');
+      } else {
+        adminPanel.style.display = 'none';
+        adminPanel.setAttribute('aria-hidden', 'true');
+      }
+      // ensure nameSelect includes this account and select it
+      let found = false;
+      for (let i = 0; i < nameSelect.options.length; i++) {
+        if (nameSelect.options[i].value === accountName) {
+          nameSelect.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        const opt = document.createElement('option');
+        opt.value = accountName;
+        opt.textContent = accountName;
+        nameSelect.appendChild(opt);
+        nameSelect.value = accountName;
+      }
+      nameSelect.focus();
+    }
+
     // Make the How-To button hookup robust (ensure handlers are attached after elements exist)
     window.addEventListener('load', () => {
-      // LOGIN: When Administrator is pressed, hide overlay and show page content
-      adminBtn.addEventListener('click', () => {
-        loginOverlay.style.display = 'none';
-        pageInner.style.display = ''; // restore display
-        // focus first control for convenience
-        const select = document.getElementById('nameSelect');
-        if (select) select.focus();
-      });
-
       howBtn.addEventListener('click', () => {
         howBackdrop.style.display = 'flex';
       });
