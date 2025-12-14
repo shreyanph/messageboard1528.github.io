@@ -41,6 +41,21 @@
       color: #fff;
     }
 
+    /* SIGN OUT button (top-right of screen) */
+    #signOutBtn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 4000;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      display: none; /* shown only when signed in */
+    }
+
     h2 { margin-bottom: 10px; color: #ffffff; }
 
     input, textarea, select {
@@ -310,10 +325,14 @@
     <button id="sendBtn">Send</button>
 
     <h2>Message History</h2>
+    <!-- This button is present in the DOM but will be hidden for non-admins by JS -->
     <button id="clearBtn" title="Only Administrator may clear history">Clear Message History (cloud)</button>
 
     <div id="messages" aria-live="polite"></div>
   </div>
+
+  <!-- Sign Out button (top-right) -->
+  <button id="signOutBtn" title="Sign out">Sign Out</button>
 
   <!-- How To Use modal -->
   <div id="howBackdrop" class="how-modal-backdrop" role="dialog" aria-modal="true">
@@ -323,7 +342,7 @@
       <ol>
         <li><u>Administrator</u> creates accounts (Admin panel) and manages them in the cloud.</li>
         <li>Users sign in from the lock screen. If a password doesn't exist, they are prompted to create one.</li>
-        <li>Non-admins may only send messages as their signed-in account. Admin may send as any name.</li>
+        <li>Non-admins may only send messages as their signed-in account. Admin may send as any name, but the dropdown will default to Administrator on admin login.</li>
       </ol>
       <p>Thanks for using Message Board!</p>
     </div>
@@ -398,6 +417,9 @@
     const howBtn = document.getElementById('howBtn');
     const howBackdrop = document.getElementById('howBackdrop');
     const howClose = document.getElementById('howClose');
+
+    // Sign out button ref
+    const signOutBtn = document.getElementById('signOutBtn');
 
     // hide page until login
     pageInner.style.display = 'none';
@@ -684,10 +706,28 @@
         adminPanel.setAttribute('aria-hidden', 'true');
       }
 
-      // enforce send-as restriction
+      // NEW: When Administrator logs in, automatically set the dropdown to Administrator
       if (currentUser === ADMIN_NAME) {
+        // Ensure Administrator option exists and select it
+        let found = false;
+        for (let i = 0; i < nameSelect.options.length; i++) {
+          if (nameSelect.options[i].value === ADMIN_NAME) {
+            nameSelect.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          const opt = document.createElement('option');
+          opt.value = ADMIN_NAME;
+          opt.textContent = ADMIN_NAME;
+          nameSelect.appendChild(opt);
+          nameSelect.value = ADMIN_NAME;
+        }
+        // keep dropdown enabled for admin (admin can still send as others if desired)
         nameSelect.disabled = false;
       } else {
+        // Non-admins: lock send identity to currentUser
         let found = false;
         for (let i = 0; i < nameSelect.options.length; i++) {
           if (nameSelect.options[i].value === accountName) {
@@ -717,8 +757,43 @@
       avatarCircle.textContent = '';
       loginHint.textContent = 'Hover an account to preview initial, click to sign in';
       pwPromptText.textContent = '';
+
+      // Show sign out button when signed in
+      signOutBtn.style.display = '';
+
       updateClearButtonState();
     }
+
+    // SIGN OUT behavior (single requested edit)
+    function signOut() {
+      // clear current user and UI states, return to lock screen
+      currentUser = null;
+      // hide page UI, show lock screen
+      pageInner.style.display = 'none';
+      loginOverlay.style.display = '';
+      // hide admin panel and password area
+      adminPanel.style.display = 'none';
+      passwordArea.style.display = 'none';
+      passwordArea.setAttribute('aria-hidden', 'true');
+      // reset visual pieces
+      avatarCircle.textContent = '';
+      accountButtons.style.display = 'flex';
+      // hide sign out button
+      signOutBtn.style.display = 'none';
+      // reset name selection so next user isn't preselected
+      if (nameSelect) {
+        nameSelect.selectedIndex = 0;
+        nameSelect.disabled = false;
+      }
+      // update clear button visibility (admin only)
+      updateClearButtonState();
+    }
+
+    // wire up signOut button
+    signOutBtn.addEventListener('click', () => {
+      if (!confirm('Sign out?')) return;
+      signOut();
+    });
 
     // messages listener & renderer
     const messagesCol = collection(db, 'messages');
@@ -848,7 +923,7 @@
       }
     }
 
-    // send message (respect sign-in restrictions)
+    // send message
     sendBtn.addEventListener('click', addMessage);
     messageInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -872,12 +947,14 @@
       }
     }
 
-    // clear button state & handler (admin only)
+    // clear button state & handler (admin only). Now hidden for non-admins.
     function updateClearButtonState() {
       if (currentUser === ADMIN_NAME) {
+        clearBtn.style.display = '';      // visible
         clearBtn.disabled = false;
         clearBtn.title = 'Clear all messages (Administrator only)';
       } else {
+        clearBtn.style.display = 'none';  // hide for everyone else
         clearBtn.disabled = true;
         clearBtn.title = 'Only Administrator may clear history';
       }
@@ -940,10 +1017,12 @@
     howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
     howBackdrop.addEventListener('click', e => { if (e.target === howBackdrop) howBackdrop.style.display = 'none'; });
 
-    // init placeholder
+    // init
     (function init() {
+      // keep clear hidden until login (updateClearButtonState will handle visibility after login)
+      clearBtn.style.display = 'none';
+      signOutBtn.style.display = 'none';
       updateClearButtonState();
-      // accounts onSnapshot will populate login UI
     })();
   </script>
 </body>
