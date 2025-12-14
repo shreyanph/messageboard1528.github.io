@@ -234,13 +234,14 @@
   <!-- LOGIN OVERLAY: shown first. Background remains visible beneath -->
   <div id="loginOverlay" role="dialog" aria-modal="true" aria-label="Login">
     <div class="login-card" role="presentation">
-      <div class="avatar" aria-hidden="true">A</div>
+      <!-- avatar now has an id for JS control and is empty by default -->
+      <div id="avatarCircle" class="avatar" aria-hidden="true"></div>
       <div class="login-title">Select an account to sign in</div>
 
       <!-- Dynamic list of accounts from cloud -->
       <div id="accountButtons" style="display:flex; flex-direction:column; gap:8px; align-items:center; width:100%;"></div>
 
-      <div style="font-size:0.85em; color:rgba(255,255,255,0.75);">Click the account to continue</div>
+      <div style="font-size:0.85em; color:rgba(255,255,255,0.75);">Hover an account to preview initial, click to sign in</div>
     </div>
   </div>
 
@@ -361,6 +362,7 @@
     const newAccountInput = document.getElementById('newAccountInput');
     const addAccountBtn = document.getElementById('addAccountBtn');
     const accountsList = document.getElementById('accountsList');
+    const avatarCircle = document.getElementById('avatarCircle');
 
     // hide the message-board UI until login
     pageInner.style.display = 'none';
@@ -386,7 +388,6 @@
           }
         }
       } catch (err) {
-        // If permission prevents writing, we still continue; onSnapshot will show whatever is present.
         console.warn("Could not ensure Administrator present (permissions/offline):", err?.message);
       }
     })();
@@ -407,9 +408,7 @@
       if (safeList.length === 0) {
         appendAccountButton(ADMIN_NAME);
       } else {
-        // Always ensure ADMIN_NAME appears first (if present)
         if (!safeList.includes(ADMIN_NAME)) safeList.unshift(ADMIN_NAME);
-        // Remove duplicates and preserve order
         const seen = new Set();
         const unique = [];
         for (const n of safeList) {
@@ -421,7 +420,6 @@
       // Build admin panel list
       accountsList.innerHTML = "";
       if (Array.isArray(list)) {
-        // keep Administrator at top if present
         const ordered = list.includes(ADMIN_NAME) ? [ADMIN_NAME, ...list.filter(n => n !== ADMIN_NAME)] : list;
         ordered.forEach(name => {
           const li = document.createElement('li');
@@ -429,7 +427,6 @@
           label.textContent = name;
           li.appendChild(label);
 
-          // Remove button: NOT shown (or disabled) for Administrator
           if (name === ADMIN_NAME) {
             const rm = document.createElement('button');
             rm.className = 'remove-account disabled';
@@ -446,9 +443,7 @@
               try {
                 const snap = await getDoc(accountsDocRef);
                 const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-                // protect Administrator even if current local list differs
                 const filtered = existing.filter(n => n !== name && n !== undefined && n !== null);
-                // ensure Administrator remains
                 if (!filtered.includes(ADMIN_NAME)) filtered.unshift(ADMIN_NAME);
                 await setDoc(accountsDocRef, { list: filtered });
               } catch (err) {
@@ -470,8 +465,7 @@
       placeholder.textContent = "Select a name";
       nameSelect.appendChild(placeholder);
 
-      const finalList = Array.isArray(list) ? list : [];
-      // Ensure Administrator is included even if list empty
+      const finalList = Array.isArray(list) ? list.slice() : [];
       if (!finalList.includes(ADMIN_NAME)) finalList.unshift(ADMIN_NAME);
       const seen2 = new Set();
       for (const n of finalList) {
@@ -489,6 +483,21 @@
       b.type = 'button';
       b.className = 'account-btn';
       b.textContent = name;
+
+      // Hover behavior: show capitalized initial in avatarCircle while hovered
+      b.addEventListener('mouseenter', () => {
+        try {
+          const ch = (name && typeof name === 'string') ? name.trim().charAt(0).toUpperCase() : '';
+          avatarCircle.textContent = ch;
+        } catch (e) {
+          avatarCircle.textContent = '';
+        }
+      });
+      b.addEventListener('mouseleave', () => {
+        // clear avatar when not hovering
+        avatarCircle.textContent = '';
+      });
+
       b.addEventListener('click', () => {
         // sign in as this account
         loginAs(name);
@@ -512,7 +521,6 @@
           alert('Account already exists.');
           return;
         }
-        // ensure Administrator preserved
         const updated = existing.includes(ADMIN_NAME) ? [...existing, v] : [ADMIN_NAME, ...existing, v];
         await setDoc(accountsDocRef, { list: updated });
         newAccountInput.value = '';
@@ -553,6 +561,8 @@
         nameSelect.value = accountName;
       }
       nameSelect.focus();
+      // clear avatar when we move past login
+      avatarCircle.textContent = '';
     }
 
     // Make the How-To button hookup robust (ensure handlers are attached after elements exist)
