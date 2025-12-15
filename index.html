@@ -854,6 +854,14 @@
       }
     });
 
+    // === NEW: submit password on Enter in lock screen ===
+    passwordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitPwBtn.click();
+      }
+    });
+
     function finishLoginAs(accountName) {
       currentUser = accountName;
       loginOverlay.style.display = 'none';
@@ -1132,12 +1140,10 @@
       const saveBtn = document.createElement('button');
       saveBtn.textContent = 'Save';
       saveBtn.className = 'icon-btn save-btn';
-      // removed inline green style — now styled via CSS in .edit-area .icon-btn
 
       const cancelBtn = document.createElement('button');
       cancelBtn.textContent = 'Cancel';
       cancelBtn.className = 'icon-btn cancel-btn';
-      // removed inline pale style — now styled via CSS in .edit-area .icon-btn
 
       editWrap.appendChild(ta);
       editWrap.appendChild(saveBtn);
@@ -1149,6 +1155,14 @@
 
       ta.focus();
       ta.selectionStart = ta.value.length;
+
+      // === NEW: allow Enter (without Shift) to save the edit ===
+      ta.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          saveBtn.click();
+        }
+      });
 
       cancelBtn.addEventListener('click', (e) => {
         e.stopPropagation();
