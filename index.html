@@ -85,6 +85,14 @@
       gap: 10px;
     }
 
+    /* message row wrapper (message + actions) */
+    .message-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      position: relative;
+    }
+
     /* message bubble */
     .message {
       border-radius: 999px;
@@ -99,6 +107,45 @@
     }
     .message .name { font-weight: 700; margin-right: 8px; color: #ffffff; display:inline; }
     .message .content { display:inline; color: #ffffff; }
+
+    /* actions shown to the right of message; appear on hover of row */
+    .actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-left: 6px;
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+    .message-row:hover .actions,
+    .message-row:focus-within .actions {
+      opacity: 1;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      font-size: 16px;
+      padding: 4px;
+    }
+    .icon-btn:hover { filter: brightness(1.15); }
+
+    .icon-btn.trash {
+      background: rgba(220,20,60,0.95);
+      color: #fff;
+    }
+    .icon-btn.pencil {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+    }
 
     .divider {
       border-bottom: 1px solid rgba(255,255,255,0.25);
@@ -213,6 +260,10 @@
     .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
     .emoji-btn { background: transparent; border: none; font-size: 20px; padding: 6px; cursor: pointer; border-radius: 6px; color: #fff; }
     .emoji-btn:hover { background: rgba(255,255,255,0.06); }
+
+    /* inline edit UI inside message bubble */
+    .edit-area { display:flex; gap:6px; align-items:center; }
+    .edit-area textarea { height:56px; min-width:200px; resize:vertical; color:#000; background:#fff; border-radius:8px; padding:8px; }
 
     /* Password area */
     #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
@@ -823,6 +874,10 @@
         const who = (m.name && String(m.name).trim()) ? String(m.name).trim() : 'Unknown';
         const text = (m.text && String(m.text)) ? m.text : '';
 
+        // wrapper row (message + actions)
+        const row = document.createElement('div');
+        row.className = 'message-row';
+
         // wrapper bubble
         const div = document.createElement('div');
         div.className = 'message';
@@ -838,7 +893,46 @@
 
         div.appendChild(nameSpan);
         div.appendChild(contentSpan);
-        messagesDiv.appendChild(div);
+
+        // actions container (empty unless allowed)
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        // determine permission: admin sees all; non-admin sees only own messages
+        const canAct = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+
+        if (canAct) {
+          // Trash button
+          const trash = document.createElement('button');
+          trash.className = 'icon-btn trash';
+          trash.title = 'Delete message';
+          trash.innerHTML = '🗑';
+          trash.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            // immediate delete (no confirm per request)
+            try {
+              await deleteDoc(doc(db, 'messages', m.id));
+            } catch (err) {
+              alert('Failed to delete message: ' + (err.message || err));
+            }
+          });
+          actions.appendChild(trash);
+
+          // Edit button
+          const edit = document.createElement('button');
+          edit.className = 'icon-btn pencil';
+          edit.title = 'Edit message';
+          edit.innerHTML = '✏';
+          edit.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            startEdit(row, div, contentSpan, m);
+          });
+          actions.appendChild(edit);
+        }
+
+        row.appendChild(div);
+        row.appendChild(actions);
+        messagesDiv.appendChild(row);
 
         if (i < messages.length - 1 && messages[i].name !== messages[i + 1].name) {
           const nextTime = formatTimestamp(messages[i + 1].time);
@@ -850,6 +944,66 @@
       if (messagesDiv.lastElementChild) {
         messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
+    }
+
+    // start inline edit for a message row
+    function startEdit(row, messageDiv, contentSpan, m) {
+      // prevent multiple edit areas
+      if (row.querySelector('.edit-area')) return;
+
+      const originalText = m.text || '';
+      // create edit container
+      const editWrap = document.createElement('div');
+      editWrap.className = 'edit-area';
+
+      const ta = document.createElement('textarea');
+      ta.value = originalText;
+      ta.style.minWidth = '200px';
+      ta.style.maxWidth = '420px';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = 'Save';
+      saveBtn.className = 'icon-btn';
+      saveBtn.style.background = 'rgba(0,150,0,0.9)';
+      saveBtn.style.color = '#fff';
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.className = 'icon-btn';
+      cancelBtn.style.background = 'rgba(255,255,255,0.06)';
+
+      editWrap.appendChild(ta);
+      editWrap.appendChild(saveBtn);
+      editWrap.appendChild(cancelBtn);
+
+      // hide the original contentSpan and append edit area after nameSpan
+      contentSpan.style.display = 'none';
+      messageDiv.appendChild(editWrap);
+
+      ta.focus();
+      ta.selectionStart = ta.value.length;
+
+      cancelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // remove edit UI and restore
+        editWrap.remove();
+        contentSpan.style.display = '';
+      });
+
+      saveBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const newText = (ta.value || '').trim();
+        try {
+          // update message text (merge)
+          await setDoc(doc(db, 'messages', m.id), { text: newText }, { merge: true });
+          // editWrap will be removed on snapshot update; but clean up now:
+          editWrap.remove();
+          contentSpan.textContent = ' ' + newText;
+          contentSpan.style.display = '';
+        } catch (err) {
+          alert('Failed to save edit: ' + (err.message || err));
+        }
+      });
     }
 
     function createTimestampRow(text) {
