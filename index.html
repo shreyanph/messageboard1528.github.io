@@ -12,7 +12,7 @@
       margin: 0;
       color: #ffffff;
       background-image: url("https://scx1.b-cdn.net/csz/news/800a/2023/data-science.jpg");
-      background-size: 115% auto; /* <-- zoomed in slightly to hide white edges */
+      background-size: 115% auto; /* slightly zoomed to remove white edges */
       background-position: center;
       background-repeat: no-repeat;
       position: relative;
@@ -41,13 +41,13 @@
       color: #fff;
     }
 
-    /* SIGN OUT button (top-right of screen) */
+    /* SIGN OUT button (top-right of screen) - red background requested */
     #signOutBtn {
       position: fixed;
       top: 12px;
       right: 12px;
       z-index: 5001; /* high so it shows above overlays */
-      background: rgba(0,0,0,0.7);
+      background: rgba(220,20,60,0.95); /* red background */
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
       border-radius: 6px;
@@ -82,6 +82,14 @@
       padding: 8px;
     }
     textarea { height: 80px; resize: vertical; }
+
+    /* input error border for password input */
+    input.input-error {
+      border: 2px solid rgba(220,20,60,0.95) !important;
+      outline: none;
+      background: #fff;
+      color: #000;
+    }
 
     button {
       margin-top: 10px;
@@ -245,6 +253,17 @@
     .remove-account { background: rgba(255,255,255,0.06); border: none; color: #fff; padding: 4px 8px; border-radius:6px; cursor:pointer; }
     .remove-account.disabled { opacity: 0.45; cursor: not-allowed; background: rgba(255,255,255,0.02); }
 
+    /* style for admin "Change Password" small button in accounts list */
+    .change-account-pw {
+      background: rgba(30,144,255,0.95);
+      border: none;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 6px;
+    }
+
     /* Emoji row: ensure textarea and button are in same row */
     .emoji-row {
       display: flex;
@@ -338,7 +357,15 @@
 
     /* Password area */
     #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
-    #passwordArea input[type="password"] { flex:1; padding:8px; }
+    #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
+
+    /* small inline password error text */
+    .pw-error {
+      color: rgba(255,200,200,1);
+      font-size: 0.9em;
+      display: none;
+      margin-bottom: 4px;
+    }
 
     button[disabled] { opacity: 0.45; cursor: not-allowed; }
 
@@ -393,6 +420,9 @@
       <div id="passwordArea" aria-hidden="true">
         <div id="pwPromptText" style="margin-bottom:4px; color:rgba(255,255,255,0.9); font-size:0.95em;"></div>
 
+        <!-- Inline error appears here for incorrect passwords -->
+        <div id="pwErr" class="pw-error" aria-live="polite"></div>
+
         <div id="enterPw" style="display:none; gap:8px; flex-direction:column;">
           <input id="passwordInput" type="password" placeholder="Password" autocomplete="new-password" />
           <div style="display:flex; gap:8px;">
@@ -411,7 +441,10 @@
         </div>
       </div>
 
-      <div id="loginHint" style="font-size:0.85em; color:rgba(255,255,255,0.75);">Click/Press on your account to sign in</div>
+      <!-- login hint (changed to requested exact string) -->
+      <div id="loginHint" style="font-size:0.85em; color:rgba(255,255,255,0.75);">
+        Click/Press your account to sign in!
+      </div>
     </div>
   </div>
 
@@ -552,6 +585,7 @@
     const createPwBtn = document.getElementById('createPwBtn');
     const cancelCreateBtn = document.getElementById('cancelCreateBtn');
     const loginHint = document.getElementById('loginHint');
+    const pwErr = document.getElementById('pwErr');
 
     // emoji UI refs
     const emojiBtn = document.getElementById('emojiBtn');
@@ -588,6 +622,8 @@
 
     // remember last messages so we can re-render after login
     let lastMessages = [];
+    // If admin is changing another user's password, this stores the target account.
+    let pwChangeTarget = null;
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -646,16 +682,45 @@
         const ordered = list.includes(ADMIN_NAME) ? [ADMIN_NAME, ...list.filter(n => n !== ADMIN_NAME)] : list;
         ordered.forEach(name => {
           const li = document.createElement('li');
+          const leftWrap = document.createElement('div');
+          leftWrap.style.display = 'flex';
+          leftWrap.style.alignItems = 'center';
+          leftWrap.style.gap = '8px';
+
           const label = document.createElement('span');
           label.textContent = name;
-          li.appendChild(label);
+          leftWrap.appendChild(label);
+
+          // If name is not Administrator, add Change Password + Remove; if Administrator only Remove disabled
           if (name === ADMIN_NAME) {
             const rm = document.createElement('button');
             rm.className = 'remove-account disabled';
             rm.textContent = 'Remove';
             rm.disabled = true;
+            li.appendChild(leftWrap);
             li.appendChild(rm);
           } else {
+            // Change Password (admin-only action on accounts list)
+            const changeBtn = document.createElement('button');
+            changeBtn.className = 'change-account-pw';
+            changeBtn.textContent = 'Change Password';
+            changeBtn.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              // Only admins may change other users' passwords
+              if (currentUser !== ADMIN_NAME) {
+                alert('Only Administrator may change other account passwords.');
+                return;
+              }
+              pwChangeTarget = name;
+              cpCurrent.value = '';
+              cpNew.value = '';
+              cpNewRetype.value = '';
+              pwMsg.textContent = `Set a new password for ${name} (Administrator).`;
+              pwBackdrop.style.display = 'flex';
+            });
+            leftWrap.appendChild(changeBtn);
+
+            // Remove button
             const rm = document.createElement('button');
             rm.className = 'remove-account';
             rm.textContent = 'Remove';
@@ -682,6 +747,7 @@
                 alert('Failed to remove account: ' + err.message);
               }
             });
+            li.appendChild(leftWrap);
             li.appendChild(rm);
           }
           accountsList.appendChild(li);
@@ -769,6 +835,11 @@
       avatarCircle.textContent = (accountName && typeof accountName === 'string') ? accountName.trim().charAt(0).toUpperCase() : '';
       pwPromptText.textContent = `Sign in as ${accountName}`;
 
+      // clear previous inline error
+      pwErr.style.display = 'none';
+      pwErr.textContent = '';
+      passwordInput.classList.remove('input-error');
+
       try {
         const pwSnap = await getDoc(passwordsDocRef);
         const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
@@ -803,6 +874,11 @@
       avatarCircle.textContent = '';
       loginHint.textContent = 'Hover an account to preview initial, click to sign in';
       pwPromptText.textContent = '';
+
+      // clear inline error
+      pwErr.style.display = 'none';
+      pwErr.textContent = '';
+      passwordInput.classList.remove('input-error');
     }
 
     document.getElementById('cancelPwBtn').addEventListener('click', endPasswordFlow);
@@ -826,9 +902,17 @@
       }
     });
 
+    // === UPDATED: submit password handler shows inline error, not an alert popup ===
     submitPwBtn.addEventListener('click', async () => {
       const p = (passwordInput.value || '').trim();
-      if (!p) { alert('Please enter your password.'); return; }
+      if (!p) {
+        // keep the small inline message for missing pw as well
+        pwErr.textContent = 'Please enter your password';
+        pwErr.style.display = 'block';
+        passwordInput.classList.add('input-error');
+        passwordInput.focus();
+        return;
+      }
       const acct = passwordFlow.account;
       try {
         const hashed = await hashPassword(p);
@@ -836,6 +920,7 @@
         const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
         const stored = map[acct] || null;
         if (!stored) {
+          // no stored password -> instruct to create instead
           alert('No password stored for this account. Please create one.');
           passwordFlow.mode = 'create';
           enterPw.style.display = 'none';
@@ -843,14 +928,31 @@
           return;
         }
         if (hashed === stored) {
+          // success: clear inline error and finish login
+          pwErr.style.display = 'none';
+          pwErr.textContent = '';
+          passwordInput.classList.remove('input-error');
           finishLoginAs(acct);
         } else {
-          alert('Incorrect password. Try again.');
-          passwordInput.value = '';
+          // WRONG PASSWORD: inline message and red border — no alert/pop-up
+          pwErr.textContent = `Incorrect password for ${acct}`;
+          pwErr.style.display = 'block';
+          passwordInput.classList.add('input-error');
           passwordInput.focus();
+          return;
         }
       } catch (err) {
+        // fallback alert for unexpected error
         alert('Failed to verify password: ' + (err.message || err));
+      }
+    });
+
+    // clear inline error if user types again
+    passwordInput.addEventListener('input', () => {
+      if (pwErr.style.display === 'block') {
+        pwErr.style.display = 'none';
+        pwErr.textContent = '';
+        passwordInput.classList.remove('input-error');
       }
     });
 
@@ -963,25 +1065,33 @@
       signOut();
     });
 
-    // wire up change password button (opens modal)
+    // wire up change password button (opens modal for current user)
     changePwBtn.addEventListener('click', () => {
       if (!currentUser) {
         alert('No user signed in.');
         return;
       }
-      // reset modal values
+      // target is current user
+      pwChangeTarget = currentUser;
       cpCurrent.value = '';
       cpNew.value = '';
       cpNewRetype.value = '';
       pwMsg.textContent = 'Enter your current password and a new password.';
       pwBackdrop.style.display = 'flex';
     });
-    cpCancelBtn.addEventListener('click', () => { pwBackdrop.style.display = 'none'; });
-    closePwModal.addEventListener('click', () => { pwBackdrop.style.display = 'none'; });
+    cpCancelBtn.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
+    closePwModal.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
 
-    // Save password change
+    // Save password change (handles both admin changing others and users changing their own)
     cpSaveBtn.addEventListener('click', async () => {
       if (!currentUser) { alert('No user signed in.'); return; }
+      const target = pwChangeTarget || currentUser;
+      // If trying to change someone else's password and not admin — disallow
+      if (target !== currentUser && currentUser !== ADMIN_NAME) {
+        alert('Only Administrator may change other account passwords.');
+        return;
+      }
+
       const oldp = (cpCurrent.value || '').trim();
       const newp = (cpNew.value || '').trim();
       const newp2 = (cpNewRetype.value || '').trim();
@@ -991,20 +1101,22 @@
       try {
         const pwSnap = await getDoc(passwordsDocRef);
         const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
-        const stored = map[currentUser] || null;
+        const stored = map[target] || null;
 
-        // If a stored password exists, require old password match
-        if (stored) {
+        // If target is the current user and a stored password exists, require old password match
+        if (target === currentUser && stored) {
           if (!oldp) { alert('Enter current password.'); return; }
           const oldHash = await hashPassword(oldp);
           if (oldHash !== stored) { alert('Current password incorrect.'); return; }
         }
 
+        // Admin changing another user's password does NOT require their old password
         const newHash = await hashPassword(newp);
-        map[currentUser] = newHash;
+        map[target] = newHash;
         await setDoc(passwordsDocRef, { map }, { merge: true });
         alert('Password updated.');
         pwBackdrop.style.display = 'none';
+        pwChangeTarget = null;
       } catch (err) {
         alert('Failed to change password: ' + (err.message || err));
       }
@@ -1156,7 +1268,7 @@
       ta.focus();
       ta.selectionStart = ta.value.length;
 
-      // === NEW: allow Enter (without Shift) to save the edit ===
+      // allow Enter (without Shift) to save the edit
       ta.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
