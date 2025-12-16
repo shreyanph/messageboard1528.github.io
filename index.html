@@ -174,6 +174,17 @@
       color: #fff;
     }
 
+    /* REPLY button: orange with white arrow */
+    .icon-btn.reply-btn {
+      background: rgba(255,165,0,0.95); /* orange */
+      color: #fff;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
     .divider {
       border-bottom: 1px solid rgba(255,255,255,0.25);
       margin: 8px 0;
@@ -531,6 +542,63 @@
 
     .hidden { display: none !important; }
 
+    /* Reply block styles */
+    .replies-wrapper {
+      margin-left: 48px; /* indent replies */
+      margin-top: 8px;
+      border-left: 2px solid rgba(255,165,0,0.9); /* orange accent */
+      padding-left: 12px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* small arrow connecting message -> replies; only visible when replies exist */
+    .replies-wrapper::before {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: -10px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-right: 12px solid rgba(255,165,0,0.95);
+    }
+
+    .reply {
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: #fff;
+      font-size: 0.95em;
+      word-wrap: break-word;
+    }
+    .reply .r-name { font-weight:700; margin-right:8px; color:#fff; }
+
+    /* Reply indicator above input (shown while composing a reply) */
+    .reply-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.06);
+      margin: 8px 0;
+      font-size: 0.95em;
+    }
+    .reply-indicator .cancel-reply {
+      background: rgba(255,255,255,0.06);
+      border: none;
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
     @media (max-width: 640px) {
       .page-inner { margin: 20px; max-width: 100%; }
       .login-card { min-width: 260px; padding: 18px; min-height: 360px; }
@@ -540,6 +608,7 @@
       #bootLogoWrap { width: 240px; height: 240px; }
       #bootLogo { width: 220px; height: 220px; }
       .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
+      .replies-wrapper { margin-left: 32px; padding-left: 10px; }
     }
   </style>
 </head>
@@ -628,6 +697,12 @@
       <div id="emojiPicker" class="emoji-picker" aria-hidden="true">
         <div class="emoji-grid" id="emojiGrid"></div>
       </div>
+    </div>
+
+    <!-- Reply indicator (appears when replying to a specific message) -->
+    <div id="replyIndicator" class="reply-indicator" aria-hidden="true">
+      <div id="replyIndicatorText"></div>
+      <button id="cancelReplyBtn" class="cancel-reply">Cancel</button>
     </div>
 
     <br>
@@ -771,6 +846,11 @@
     const closePwModal = document.getElementById('closePwModal');
     const pwMsg = document.getElementById('pwMsg');
 
+    // reply UI refs
+    const replyIndicator = document.getElementById('replyIndicator');
+    const replyIndicatorText = document.getElementById('replyIndicatorText');
+    const cancelReplyBtn = document.getElementById('cancelReplyBtn');
+
     // hide page until login
     pageInner.style.display = 'none';
 
@@ -783,6 +863,10 @@
     let lastMessages = [];
     // If admin is changing another user's password, this stores the target account.
     let pwChangeTarget = null;
+
+    // reply target state
+    let replyTargetId = null;
+    let replyTargetName = null;
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -1277,7 +1361,7 @@
       }, t + 60);
     }
 
-    // SIGN OUT behavior
+    // SIGN OUT behavior (uses same startup animation sequence)
     function signOut() {
       currentUser = null;
 
@@ -1295,23 +1379,18 @@
         // --- START: Changed to use the same startup animation sequence ---
         loginOverlay.style.display = 'flex';
         loginCard.style.visibility = '';
-        // ensure we start from the collapsed state and remove any leftover classes
         loginCard.classList.remove('fade-out');
         loginCard.classList.remove('split-open');
         loginCard.classList.remove('scale-in'); // reset to collapsed; requestAnimationFrame will add scale-in
 
-        // show split overlays and account buttons then trigger the same frame-based entry used at init
         splitTop.style.display = '';
         splitBottom.style.display = '';
         accountButtons.style.visibility = 'visible';
         accountButtons.classList.remove('fade-out');
         accountButtons.classList.add('fade-in');
 
-        // use RAF to match the initial startup sequence so transform + split animation sync
         requestAnimationFrame(() => {
-          // add scale-in to animate from center
           loginCard.classList.add('scale-in');
-          // force layout then open split overlays outward
           void loginCard.offsetWidth;
           loginCard.classList.add('split-open');
         });
@@ -1321,8 +1400,7 @@
           splitBottom.style.display = 'none';
           loginCard.classList.remove('split-open');
         }, 3000);
-        // --- END: Changed to use the same startup animation sequence ---
-
+        // --- END ---
         passwordArea.style.display = 'none';
 
         avatarCircle.textContent = '';
@@ -1406,7 +1484,8 @@
           id: docSnap.id,
           name: d.name,
           text: d.text || "",
-          time: d.time || null
+          time: d.time || null,
+          parentId: d.parentId || null
         });
       });
       lastMessages = msgs;
@@ -1419,16 +1498,31 @@
       messagesDiv.innerHTML = "";
       if (!Array.isArray(messages) || messages.length === 0) return;
 
-      const topTime = formatTimestamp(messages[0].time);
+      // Build replies map: parentId => [replyMsgs]
+      const repliesByParent = {};
+      const topLevel = [];
+      for (const m of messages) {
+        if (m.parentId) {
+          repliesByParent[m.parentId] = repliesByParent[m.parentId] || [];
+          repliesByParent[m.parentId].push(m);
+        } else {
+          topLevel.push(m);
+        }
+      }
+
+      // Add timestamp for top of list
+      const topTime = formatTimestamp(topLevel[0]?.time);
       messagesDiv.appendChild(createTimestampRow(topTime));
 
-      for (let i = 0; i < messages.length; i++) {
-        const m = messages[i] || {};
+      // Render top-level messages in chronological order (topLevel already sorted by time)
+      for (let i = 0; i < topLevel.length; i++) {
+        const m = topLevel[i] || {};
         const who = (m.name && String(m.name).trim()) ? String(m.name).trim() : 'Unknown';
         const text = (m.text && String(m.text)) ? m.text : '';
 
         const row = document.createElement('div');
         row.className = 'message-row';
+        row.style.position = 'relative';
 
         const div = document.createElement('div');
         div.className = 'message';
@@ -1445,6 +1539,26 @@
         div.appendChild(nameSpan);
         div.appendChild(contentSpan);
 
+        // Reply button (always visible for every user)
+        const replyBtn = document.createElement('button');
+        replyBtn.type = 'button';
+        replyBtn.className = 'icon-btn reply-btn';
+        replyBtn.title = 'Reply';
+        // arrow glyph (white) pointing right/up style; clear and legible
+        replyBtn.innerHTML = '↪';
+
+        replyBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          // Set reply target
+          replyTargetId = m.id;
+          replyTargetName = who;
+          replyIndicatorText.textContent = `Replying to ${who}`;
+          replyIndicator.style.display = 'flex';
+          replyIndicator.setAttribute('aria-hidden', 'false');
+          messageInput.focus();
+        });
+
+        // actions (edit/delete) still appear for messages you can act on
         const actions = document.createElement('div');
         actions.className = 'actions';
 
@@ -1460,7 +1574,18 @@
             const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
             if (!allowedNow) { alert('Not allowed to delete this message.'); return; }
             try {
+              // delete the message and any replies referencing it
+              // delete message doc
               await deleteDoc(doc(db, 'messages', m.id));
+              // find replies and delete them (optional: could keep replies; here we delete)
+              // (we'll attempt to remove replies that have parentId == m.id)
+              const snap = await getDocs(messagesQuery);
+              const deletes = [];
+              snap.forEach(snapDoc => {
+                const sd = snapDoc.data();
+                if (sd.parentId === m.id) deletes.push(deleteDoc(doc(db, 'messages', snapDoc.id)));
+              });
+              if (deletes.length) await Promise.all(deletes);
             } catch (err) {
               alert('Failed to delete message: ' + (err.message || err));
             }
@@ -1480,12 +1605,43 @@
           actions.appendChild(edit);
         }
 
+        // assemble: message div, reply button, then actions
         row.appendChild(div);
+        row.appendChild(replyBtn);
         row.appendChild(actions);
         messagesDiv.appendChild(row);
 
-        if (i < messages.length - 1 && messages[i].name !== messages[i + 1].name) {
-          const nextTime = formatTimestamp(messages[i + 1].time);
+        // If this message has replies, render replies block
+        const replies = repliesByParent[m.id] || [];
+        if (replies && replies.length > 0) {
+          // sort replies by time (they should already be ordered but ensure)
+          replies.sort((a,b) => {
+            const ta = a.time && a.time.toDate ? a.time.toDate().getTime() : (new Date(a.time || 0)).getTime();
+            const tb = b.time && b.time.toDate ? b.time.toDate().getTime() : (new Date(b.time || 0)).getTime();
+            return (ta || 0) - (tb || 0);
+          });
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'replies-wrapper';
+          for (const r of replies) {
+            const rep = document.createElement('div');
+            rep.className = 'reply';
+            const rn = document.createElement('span');
+            rn.className = 'r-name';
+            rn.textContent = (r.name || 'Unknown') + ':';
+            const rt = document.createElement('span');
+            rt.className = 'r-text';
+            rt.textContent = ' ' + (r.text || '');
+            rep.appendChild(rn);
+            rep.appendChild(rt);
+            wrapper.appendChild(rep);
+          }
+          messagesDiv.appendChild(wrapper);
+        }
+
+        // add timestamp separators when name changes or next top-level
+        if (i < topLevel.length - 1 && topLevel[i].name !== topLevel[i + 1].name) {
+          const nextTime = formatTimestamp(topLevel[i + 1].time);
           messagesDiv.appendChild(createTimestampRow(nextTime));
         }
       }
@@ -1638,13 +1794,31 @@
       const text = (messageInput.value || "").trim();
       if (!sendName || !text) return;
       try {
-        await addDoc(collection(db, 'messages'), { name: sendName, text, time: serverTimestamp() });
+        // include parentId when replying
+        const payload = { name: sendName, text, time: serverTimestamp() };
+        if (replyTargetId) payload.parentId = replyTargetId;
+        await addDoc(collection(db, 'messages'), payload);
         messageInput.value = "";
+        // clear reply state after send
+        replyTargetId = null;
+        replyTargetName = null;
+        replyIndicator.style.display = 'none';
+        replyIndicator.setAttribute('aria-hidden', 'true');
+        replyIndicatorText.textContent = '';
         await enforceRetention();
       } catch (err) {
         alert("Failed to send message: " + err.message);
       }
     }
+
+    // cancel reply button handler
+    cancelReplyBtn.addEventListener('click', () => {
+      replyTargetId = null;
+      replyTargetName = null;
+      replyIndicator.style.display = 'none';
+      replyIndicator.setAttribute('aria-hidden', 'true');
+      replyIndicatorText.textContent = '';
+    });
 
     // clear button state & handler (admin only).
     function updateClearButtonState() {
