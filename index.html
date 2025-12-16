@@ -199,9 +199,7 @@
       font-size: 0.95em;
     }
 
-    /* Login overlay (full screen)
-       NOTE: made transparent so lock screen background matches message board exactly
-    */
+    /* Login overlay (restored darker overlay as requested) */
     #loginOverlay {
       position: fixed;
       left: 0;
@@ -212,9 +210,10 @@
       align-items: center;
       justify-content: center;
       z-index: 3000;
-      background: transparent; /* keep the exact same background as page (no dim) */
+      background: rgba(0,0,0,0.55); /* REVERTED to darker overlay */
     }
     .login-card {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -224,11 +223,30 @@
       padding: 26px 28px;
       border-radius: 12px;
       min-width: 320px;
+      min-height: 420px; /* prevents expand/shrink */
       box-shadow: 0 20px 60px rgba(0,0,0,0.7);
       transition: opacity 420ms ease, transform 420ms ease;
+      overflow: hidden;
     }
     /* fade-out helper (used for login card) */
     .login-card.fade-out { opacity: 0; transform: scale(0.98); pointer-events: none; }
+
+    /* splitting overlays (top+bottom) — start covering content, animate out */
+    .split-top, .split-bottom {
+      position: absolute;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.76);
+      z-index: 2500;
+      transition: transform 420ms cubic-bezier(.2,.9,.2,1);
+      pointer-events: none;
+    }
+    .split-top { top: 0; height: 50%; transform: translateY(0); }
+    .split-bottom { bottom: 0; height: 50%; transform: translateY(0); }
+
+    /* when open, move them away from center */
+    .login-card.split-open .split-top { transform: translateY(-120%); }
+    .login-card.split-open .split-bottom { transform: translateY(120%); }
 
     .avatar {
       width: 112px; height: 112px; border-radius: 50%;
@@ -246,7 +264,7 @@
     .account-btn:hover { background: rgba(255,255,255,0.06); }
 
     /* fade helpers for account list / password area */
-    #accountButtons.fade-out { opacity: 0; transform: translateY(-6px); pointer-events: none; }
+    #accountButtons.fade-out { opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity 300ms ease, transform 300ms ease; }
     #accountButtons.fade-in { opacity: 1; transform: translateY(0); pointer-events: auto; transition: opacity 300ms ease, transform 300ms ease; }
 
     /* Password area: will fade/slide into view */
@@ -484,8 +502,8 @@
     }
     #bootBox.show { opacity: 1; transform: scale(1); }
     #bootLogoWrap {
-      width: 260px;   /* much larger */
-      height: 260px;
+      width: 320px;   /* LOGO MADE LARGER per request */
+      height: 320px;
       border-radius: 50%;
       display:flex;
       align-items:center;
@@ -493,15 +511,15 @@
       background: rgba(255,255,255,0.04);
     }
     #bootLogo {
-      width: 220px;   /* logo much bigger */
-      height: 220px;
+      width: 300px;   /* much bigger logo only */
+      height: 300px;
       object-fit: contain;
       display:block;
       border-radius: 12px; /* keep rounded corners */
     }
-    /* larger spinner */
+    /* spinner unchanged (per request) */
     .boot-spinner {
-      width: 96px;   /* much bigger spinner */
+      width: 96px;
       height: 96px;
       border-radius: 50%;
       border: 10px solid rgba(255,255,255,0.12);
@@ -516,7 +534,7 @@
 
     @media (max-width: 640px) {
       .page-inner { margin: 20px; max-width: 100%; }
-      .login-card { min-width: 260px; padding: 18px; }
+      .login-card { min-width: 260px; padding: 18px; min-height: 360px; }
       .account-btn { width: 220px; }
       #adminPanel { width: calc(100% - 32px); }
       .emoji-grid { grid-template-columns: repeat(6, 1fr); }
@@ -524,8 +542,8 @@
       #howBtn { left: 8px; top: 12px; }
       #signOutBtn { right: 8px; top: 12px; }
       #changePwBtn { right: 84px; top: 12px; }
-      #bootLogoWrap { width: 200px; height: 200px; }
-      #bootLogo { width: 170px; height: 170px; }
+      #bootLogoWrap { width: 240px; height: 240px; }
+      #bootLogo { width: 220px; height: 220px; }
       .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
     }
   </style>
@@ -534,6 +552,10 @@
   <!-- LOGIN OVERLAY -->
   <div id="loginOverlay" role="dialog" aria-modal="true" aria-label="Login">
     <div class="login-card" role="presentation">
+      <!-- split overlays for center-out animation -->
+      <div class="split-top" aria-hidden="true"></div>
+      <div class="split-bottom" aria-hidden="true"></div>
+
       <div id="avatarCircle" class="avatar" aria-hidden="true"></div>
       <div class="login-title" id="loginTitle">Select an account to sign in</div>
 
@@ -722,6 +744,10 @@
     const cancelCreateBtn = document.getElementById('cancelCreateBtn');
     const loginHint = document.getElementById('loginHint');
     const pwErr = document.getElementById('pwErr');
+
+    // split overlays
+    const splitTop = document.querySelector('.split-top');
+    const splitBottom = document.querySelector('.split-bottom');
 
     // boot elements
     const bootOverlay = document.getElementById('bootOverlay');
@@ -924,6 +950,25 @@
         nameSelect.appendChild(opt);
       }
       updateClearButtonState();
+
+      // If the login overlay is visible, play the split-open reveal animation for account list
+      if (loginOverlay.style.display !== 'none' && accountButtons.style.display !== 'none') {
+        // reset overlays visible then animate out
+        loginCard.classList.remove('split-open');
+        splitTop.style.display = '';
+        splitBottom.style.display = '';
+        // force reflow then open
+        void loginCard.offsetWidth;
+        requestAnimationFrame(() => {
+          loginCard.classList.add('split-open');
+          // after transition hide overlays so they don't block pointer-events (they are pointer-events:none, but hide for cleanliness)
+          setTimeout(() => {
+            splitTop.style.display = 'none';
+            splitBottom.style.display = 'none';
+            loginCard.classList.remove('split-open'); // keep them cleared so next time we can repeat
+          }, 520);
+        });
+      }
     }
 
     function appendAccountButton(name) {
@@ -978,17 +1023,16 @@
       passwordFlow.account = accountName;
       passwordFlow.mode = null;
 
-      // fade the account list away, then slide/fade the password area in
+      // Fade account list out (no resize because login-card min-height prevents bounce)
       accountButtons.classList.add('fade-out');
       accountButtons.classList.remove('fade-in');
       setTimeout(() => {
         accountButtons.style.display = 'none';
       }, 320);
 
-      // prepare password area, then animate it in
+      // prepare password area, then animate it in (fade)
       passwordArea.classList.remove('show');
       passwordArea.style.display = 'flex';
-      // small timeout to allow layout then add class to trigger transition
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           passwordArea.classList.add('show');
@@ -1034,7 +1078,7 @@
       passwordFlow.account = null;
       passwordFlow.mode = null;
 
-      // fade password area out and restore account list
+      // fade password area out and restore account list with split animation
       passwordArea.classList.remove('show');
       setTimeout(() => {
         passwordArea.style.display = 'none';
@@ -1045,6 +1089,17 @@
       requestAnimationFrame(() => {
         accountButtons.classList.remove('fade-out');
         accountButtons.classList.add('fade-in');
+
+        // play split-open reveal when showing accounts
+        splitTop.style.display = '';
+        splitBottom.style.display = '';
+        void loginCard.offsetWidth;
+        loginCard.classList.add('split-open');
+        setTimeout(() => {
+          splitTop.style.display = 'none';
+          splitBottom.style.display = 'none';
+          loginCard.classList.remove('split-open');
+        }, 520);
       });
 
       passwordArea.setAttribute('aria-hidden', 'true');
@@ -1073,7 +1128,7 @@
         const existingMap = (snap.exists() && snap.data().map) ? snap.data().map : {};
         existingMap[acct] = hashed;
         await setDoc(passwordsDocRef, { map: existingMap }, { merge: true });
-        // start boot sequence (instead of finishing immediately)
+        // start boot sequence (instead of finish immediately)
         startBootSequence(acct);
       } catch (err) {
         alert('Failed to set password: ' + (err.message || err));
@@ -1144,37 +1199,38 @@
 
     // START BOOT SEQUENCE
     // - fade out login card
-    // - show boot overlay with the logo image and spinner centered
+    // - show boot overlay with the (larger) logo image and spinner centered
+    // - perform hidden setup during the wait
     // - wait 3 seconds
-    // - fade boot overlay out and then call finishLoginAs
-    function startBootSequence(accountName) {
-      // fade out the login card (nice scale + opacity)
+    // - fade the boot overlay and show the app
+    async function startBootSequence(accountName) {
       loginCard.classList.add('fade-out');
 
-      // after fade completes (~420ms), hide the login card (but keep overlay area)
-      setTimeout(() => {
-        // hide the card but keep the overlay visible
+      setTimeout(async () => {
         loginCard.style.visibility = 'hidden';
-
         // show boot overlay and animate in the boot box
         bootOverlay.style.display = 'flex';
-        // animate in
-        requestAnimationFrame(() => {
-          bootBox.classList.add('show');
-        });
+        requestAnimationFrame(() => bootBox.classList.add('show'));
+
+        // perform hidden setup in parallel (non-visible) — warm DB read
+        (async function hiddenSetup() {
+          try {
+            await getDocs(query(collection(db, 'messages'), orderBy('time', 'asc')));
+            // any other silent setup tasks could go here
+          } catch (e) {
+            // swallow errors to keep them invisible to user
+            console.warn('Hidden setup failed (ignored).');
+          }
+        })();
 
         // keep boot visible for 3 seconds
-        setTimeout(async () => {
+        setTimeout(() => {
           // fade out bootBox
           bootBox.classList.remove('show');
-          // after fade out duration, hide overlay and finish login
           setTimeout(() => {
             bootOverlay.style.display = 'none';
-            // fully remove login overlay (so pageInner will be visible cleanly)
             loginOverlay.style.display = 'none';
-            // call finishLoginAs to reveal the app UI
             finishLoginAs(accountName);
-            // restore loginCard visibility for future sign-outs (so it will animate next time)
             loginCard.style.visibility = '';
             loginCard.classList.remove('fade-out');
           }, 450);
@@ -1277,6 +1333,17 @@
         accountButtons.style.display = 'flex';
         accountButtons.classList.remove('fade-out');
         accountButtons.classList.add('fade-in');
+
+        // play split-open reveal when showing accounts
+        splitTop.style.display = '';
+        splitBottom.style.display = '';
+        void loginCard.offsetWidth;
+        loginCard.classList.add('split-open');
+        setTimeout(() => {
+          splitTop.style.display = 'none';
+          splitBottom.style.display = 'none';
+          loginCard.classList.remove('split-open');
+        }, 520);
 
         // reset password area hidden
         passwordArea.classList.remove('show');
@@ -1710,6 +1777,11 @@
       cpCurrent.style.display = '';
       // ensure account buttons start visible
       accountButtons.classList.add('fade-in');
+
+      // make sure split overlays start visible so first reveal works
+      splitTop.style.display = '';
+      splitBottom.style.display = '';
+
       updateClearButtonState();
     })();
   </script>
