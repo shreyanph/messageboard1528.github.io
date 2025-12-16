@@ -1,3 +1,4 @@
+<!-- Edited from original source: :contentReference[oaicite:1]{index=1} -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -230,8 +231,12 @@
       overflow: hidden;
       transform-origin: center center;
       opacity: 1;
+      /* START EDIT: make the lock-screen panel expand from the middle (scale from center) */
+      transform: scaleY(0);
       transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 420ms ease;
+      /* END EDIT */
     }
+    .login-card.scale-in { transform: scaleY(1); }
 
     /* split overlays (keeps existing center-out animation intact) */
     .split-top, .split-bottom {
@@ -945,6 +950,8 @@
         splitBottom.style.display = '';
         void loginCard.offsetWidth;
         loginCard.classList.add('split-open');
+        // also ensure the login-card scales in from center (3s transition)
+        loginCard.classList.add('scale-in');
         setTimeout(() => {
           splitTop.style.display = 'none';
           splitBottom.style.display = 'none';
