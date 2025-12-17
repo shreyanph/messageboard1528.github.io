@@ -174,17 +174,6 @@
       color: #fff;
     }
 
-    /* REPLY button: orange with white arrow */
-    .icon-btn.reply-btn {
-      background: rgba(255,165,0,0.95); /* orange */
-      color: #fff;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-    }
-
     .divider {
       border-bottom: 1px solid rgba(255,255,255,0.25);
       margin: 8px 0;
@@ -210,55 +199,337 @@
       font-size: 0.95em;
     }
 
-    /* Reply block styles */
-    .replies-wrapper {
-      margin-left: 48px; /* indent replies */
-      margin-top: 8px;
-      border-left: 2px solid rgba(255,165,0,0.9); /* orange accent */
-      padding-left: 12px;
+    /* Login overlay */
+    #loginOverlay {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+      background: rgba(0,0,0,0.55);
+    }
+
+    .login-card {
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-    }
-
-    /* small arrow connecting message -> replies; only visible when replies exist */
-    .replies-wrapper::before {
-      content: '';
-      position: absolute;
-      left: -12px;
-      top: -10px;
-      width: 0;
-      height: 0;
-      border-top: 8px solid transparent;
-      border-bottom: 8px solid transparent;
-      border-right: 12px solid rgba(255,165,0,0.95);
-    }
-
-    /* Reply-like individual message inside replies (but styled as normal messages via reuse) */
-    .reply-row { display:flex; gap:8px; align-items:flex-start; }
-
-    /* Reply indicator above input (shown while composing a reply) */
-    .reply-indicator {
-      display: none;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 18px;
+      background: rgba(0,0,0,0.65);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 26px 28px;
+      border-radius: 12px;
+      min-width: 320px;
+      min-height: 460px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+      overflow: hidden;
+      transform-origin: center center;
+      opacity: 1;
+      /* START EDIT: make the lock-screen panel expand from the middle (scale from center) */
+      transform: scaleY(0);
+      transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 420ms ease;
+      /* END EDIT */
+    }
+    .login-card.scale-in { transform: scaleY(1); }
+
+    /* split overlays (keeps existing center-out animation intact) */
+    .split-top, .split-bottom {
+      position: absolute;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.76);
+      z-index: 2500;
+      transition: transform 3s cubic-bezier(.2,.9,.2,1);
+      pointer-events: none;
+    }
+    .split-top { top: 0; height: 50%; transform: translateY(0); }
+    .split-bottom { bottom: 0; height: 50%; transform: translateY(0); }
+    .login-card.split-open .split-top { transform: translateY(-120%); }
+    .login-card.split-open .split-bottom { transform: translateY(120%); }
+
+    .avatar {
+      width: 112px; height: 112px; border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px; color: #fff; border: 2px solid rgba(255,255,255,0.06);
+    }
+    .login-title { font-size: 18px; color: #fff; opacity: 0.95; }
+    .account-btn {
+      width: 260px; display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-size: 16px;
+      transition: opacity 300ms ease, transform 300ms ease;
+    }
+    .account-btn:hover { background: rgba(255,255,255,0.06); }
+
+    /* ---------- REVERTED PASSWORD AREA CSS (from the snippet you provided) ---------- */
+    /* Password area: simple, no show/fade classes */
+    #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
+    #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
+
+    /* Admin panel (centered) -- updated to animate open/close (unfold) */
+    #adminPanel {
+      margin: 8px auto 16px auto;
+      z-index: 500;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 14px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 520px;
+      color: #fff;
+
+      /* folding animation base */
+      overflow: hidden;
+      max-height: 0;                   /* collapsed */
+      opacity: 0;
+      transform-origin: top center;
+      transform: scaleY(0.98);
+      transition:
+        max-height 520ms cubic-bezier(.2,.9,.2,1),
+        opacity 420ms ease,
+        transform 420ms cubic-bezier(.2,.9,.2,1);
+      pointer-events: none;
+    }
+    /* when open, allow interactions and expand */
+    #adminPanel.panel-open {
+      max-height: 520px;               /* large enough for content (adjust if needed) */
+      opacity: 1;
+      transform: scaleY(1);
+      pointer-events: auto;
+    }
+
+    #accountsList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
+    #accountsList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
+
+    /* Remove button in admin panel: red background */
+    .remove-account {
+      background: rgba(220,20,60,0.95);
+      border: none;
       color: #fff;
       padding: 6px 10px;
-      border-radius: 8px;
-      background: rgba(0,0,0,0.6);
-      border: 1px solid rgba(255,255,255,0.06);
-      margin: 8px 0;
-      font-size: 0.95em;
+      border-radius:6px;
+      cursor:pointer;
     }
-    .reply-indicator .cancel-reply {
-      background: rgba(255,255,255,0.06);
+    .remove-account.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: rgba(255,255,255,0.02);
+      color: #fff;
+    }
+
+    /* style for admin "Change Password" small button in accounts list (kept blue) */
+    .change-account-pw {
+      background: rgba(30,144,255,0.95);
+      border: none;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 6px;
+    }
+
+    /* Add button should be green */
+    #addAccountBtn {
+      background: rgba(0,180,0,0.95); /* green */
       border: none;
       color: #fff;
       padding: 6px 8px;
       border-radius: 6px;
       cursor: pointer;
     }
+
+    /* Clear message history button should be red */
+    #clearBtn {
+      background: rgba(220,20,60,0.95);
+      border: none;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* Emoji row: ensure textarea and button are in same row */
+    .emoji-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .emoji-row textarea { width: auto; flex: 1 1 auto; min-height: 44px; }
+    #emojiBtn {
+      min-width: 44px;
+      height: 44px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .emoji-picker {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: rgba(0,0,0,0.95);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 8px;
+      border-radius: 8px;
+      z-index: 200;
+      width: max-content;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      display: none;
+    }
+    .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+    .emoji-btn { background: transparent; border: none; font-size: 20px; padding: 6px; cursor: pointer; border-radius: 6px; color: #fff; }
+    .emoji-btn:hover { background: rgba(255,255,255,0.06); }
+
+    /* inline edit UI inside message bubble */
+    .edit-area {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      width:100%;
+      box-sizing:border-box;
+    }
+    .edit-area textarea {
+      height: 88px;
+      min-width: 260px;
+      max-width: 420px;
+      resize: vertical;
+      color:#000;
+      background:#fff;
+      border-radius:8px;
+      padding:8px;
+      box-sizing: border-box;
+    }
+
+    .edit-area .icon-btn {
+      background: #000;
+      color: #fff;
+      width: auto;
+      padding: 8px 12px;
+      height: auto;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .edit-area .icon-btn:hover { filter: brightness(1.12); }
+    .edit-area .cancel-btn { margin-left: auto; }
+
+    /* Change Password modal */
+    .pw-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 6000;
+      background: rgba(0,0,0,0.6);
+      align-items: center;
+      justify-content: center;
+    }
+    .pw-modal {
+      background: rgba(0,0,0,0.9);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 12px;
+      border-radius: 10px;
+      color: #fff;
+      width: 320px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .pw-modal input { width:100%; padding:8px; box-sizing:border-box; color:#000; background:#fff; border-radius:6px; border: none; }
+
+    /* small inline password error text */
+    .pw-error {
+      color: rgba(255,200,200,1);
+      font-size: 0.9em;
+      display: none;
+      margin-bottom: 4px;
+    }
+
+    button[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+    /* How modal */
+    .how-modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .how-modal {
+      max-width: 560px;
+      width: 100%;
+      background: rgba(0,0,0,0.8);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 16px;
+      border-radius: 8px;
+      color: #fff;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    .how-modal h3 { margin-top:0; }
+    .how-modal .close { position: absolute; right: 8px; top: 8px; background: transparent; border: none; color: #fff; font-size: 18px; cursor: pointer; padding: 4px; }
+
+    /* BOOT overlay (logo + spinner) */
+    #bootOverlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 4000;
+      pointer-events: none;
+      background: transparent;
+    }
+    #bootBox {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      background: transparent;
+      border-radius: 999px;
+      padding: 0;
+      transition: opacity 420ms ease, transform 420ms ease;
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    #bootBox.show { opacity: 1; transform: scale(1); }
+    #bootLogoWrap {
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(255,255,255,0.04);
+    }
+    #bootLogo {
+      width: 300px;
+      height: 300px;
+      object-fit: contain;
+      display:block;
+      border-radius: 12px;
+    }
+    .boot-spinner {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      border: 10px solid rgba(255,255,255,0.12);
+      border-top-color: rgba(255,255,255,0.95);
+      animation: spin 1s linear infinite;
+      box-sizing: border-box;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hidden { display: none !important; }
 
     @media (max-width: 640px) {
       .page-inner { margin: 20px; max-width: 100%; }
@@ -269,7 +540,6 @@
       #bootLogoWrap { width: 240px; height: 240px; }
       #bootLogo { width: 220px; height: 220px; }
       .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
-      .replies-wrapper { margin-left: 32px; padding-left: 10px; }
     }
   </style>
 </head>
@@ -358,12 +628,6 @@
       <div id="emojiPicker" class="emoji-picker" aria-hidden="true">
         <div class="emoji-grid" id="emojiGrid"></div>
       </div>
-    </div>
-
-    <!-- Reply indicator (appears when replying to a specific message) -->
-    <div id="replyIndicator" class="reply-indicator" aria-hidden="true">
-      <div id="replyIndicatorText"></div>
-      <button id="cancelReplyBtn" class="cancel-reply">Cancel</button>
     </div>
 
     <br>
@@ -507,11 +771,6 @@
     const closePwModal = document.getElementById('closePwModal');
     const pwMsg = document.getElementById('pwMsg');
 
-    // reply UI refs
-    const replyIndicator = document.getElementById('replyIndicator');
-    const replyIndicatorText = document.getElementById('replyIndicatorText');
-    const cancelReplyBtn = document.getElementById('cancelReplyBtn');
-
     // hide page until login
     pageInner.style.display = 'none';
 
@@ -524,10 +783,6 @@
     let lastMessages = [];
     // If admin is changing another user's password, this stores the target account.
     let pwChangeTarget = null;
-
-    // reply target state
-    let replyTargetId = null;
-    let replyTargetName = null;
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -1022,7 +1277,7 @@
       }, t + 60);
     }
 
-    // SIGN OUT behavior (uses same startup animation sequence)
+    // SIGN OUT behavior
     function signOut() {
       currentUser = null;
 
@@ -1040,18 +1295,23 @@
         // --- START: Changed to use the same startup animation sequence ---
         loginOverlay.style.display = 'flex';
         loginCard.style.visibility = '';
+        // ensure we start from the collapsed state and remove any leftover classes
         loginCard.classList.remove('fade-out');
         loginCard.classList.remove('split-open');
         loginCard.classList.remove('scale-in'); // reset to collapsed; requestAnimationFrame will add scale-in
 
+        // show split overlays and account buttons then trigger the same frame-based entry used at init
         splitTop.style.display = '';
         splitBottom.style.display = '';
         accountButtons.style.visibility = 'visible';
         accountButtons.classList.remove('fade-out');
         accountButtons.classList.add('fade-in');
 
+        // use RAF to match the initial startup sequence so transform + split animation sync
         requestAnimationFrame(() => {
+          // add scale-in to animate from center
           loginCard.classList.add('scale-in');
+          // force layout then open split overlays outward
           void loginCard.offsetWidth;
           loginCard.classList.add('split-open');
         });
@@ -1061,7 +1321,8 @@
           splitBottom.style.display = 'none';
           loginCard.classList.remove('split-open');
         }, 3000);
-        // --- END ---
+        // --- END: Changed to use the same startup animation sequence ---
+
         passwordArea.style.display = 'none';
 
         avatarCircle.textContent = '';
@@ -1145,8 +1406,7 @@
           id: docSnap.id,
           name: d.name,
           text: d.text || "",
-          time: d.time || null,
-          parentId: d.parentId || null
+          time: d.time || null
         });
       });
       lastMessages = msgs;
@@ -1159,56 +1419,73 @@
       messagesDiv.innerHTML = "";
       if (!Array.isArray(messages) || messages.length === 0) return;
 
-      // Build replies map: parentId => [replyMsgs]
-      const repliesByParent = {};
-      const topLevel = [];
-      for (const m of messages) {
-        if (m.parentId) {
-          repliesByParent[m.parentId] = repliesByParent[m.parentId] || [];
-          repliesByParent[m.parentId].push(m);
-        } else {
-          topLevel.push(m);
-        }
-      }
-
-      // Add timestamp for top of list
-      const topTime = formatTimestamp(topLevel[0]?.time);
+      const topTime = formatTimestamp(messages[0].time);
       messagesDiv.appendChild(createTimestampRow(topTime));
 
-      // Render top-level messages in chronological order (topLevel already sorted by time)
-      for (let i = 0; i < topLevel.length; i++) {
-        const m = topLevel[i] || {};
+      for (let i = 0; i < messages.length; i++) {
+        const m = messages[i] || {};
         const who = (m.name && String(m.name).trim()) ? String(m.name).trim() : 'Unknown';
         const text = (m.text && String(m.text)) ? m.text : '';
 
-        // create a normal message row for the top-level message
-        const row = createMessageRow(m, false);
-        messagesDiv.appendChild(row);
+        const row = document.createElement('div');
+        row.className = 'message-row';
 
-        // If this message has replies, render replies block (as full message rows indented)
-        const replies = repliesByParent[m.id] || [];
-        if (replies && replies.length > 0) {
-          // sort replies by time (they should already be ordered but ensure)
-          replies.sort((a,b) => {
-            const ta = a.time && a.time.toDate ? a.time.toDate().getTime() : (new Date(a.time || 0)).getTime();
-            const tb = b.time && b.time.toDate ? b.time.toDate().getTime() : (new Date(b.time || 0)).getTime();
-            return (ta || 0) - (tb || 0);
+        const div = document.createElement('div');
+        div.className = 'message';
+        try { div.style.background = colorForName(who); } catch (e) { div.style.background = 'rgba(0,0,0,0.45)'; }
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.textContent = who + ':';
+
+        const contentSpan = document.createElement('span');
+        contentSpan.className = 'content';
+        contentSpan.textContent = ' ' + text;
+
+        div.appendChild(nameSpan);
+        div.appendChild(contentSpan);
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        const canAct = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+
+        if (canAct) {
+          const trash = document.createElement('button');
+          trash.className = 'icon-btn trash';
+          trash.title = 'Delete message';
+          trash.innerHTML = '🗑';
+          trash.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+            if (!allowedNow) { alert('Not allowed to delete this message.'); return; }
+            try {
+              await deleteDoc(doc(db, 'messages', m.id));
+            } catch (err) {
+              alert('Failed to delete message: ' + (err.message || err));
+            }
           });
+          actions.appendChild(trash);
 
-          const wrapper = document.createElement('div');
-          wrapper.className = 'replies-wrapper';
-
-          for (const r of replies) {
-            // create a message row but mark it as a reply (no reply-button to replies of replies)
-            const rRow = createMessageRow(r, true);
-            wrapper.appendChild(rRow);
-          }
-          messagesDiv.appendChild(wrapper);
+          const edit = document.createElement('button');
+          edit.className = 'icon-btn pencil';
+          edit.title = 'Edit message';
+          edit.innerHTML = '✏';
+          edit.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+            if (!allowedNow) { alert('Not allowed to edit this message.'); return; }
+            startEdit(row, div, contentSpan, m);
+          });
+          actions.appendChild(edit);
         }
 
-        // add timestamp separators when name changes or next top-level
-        if (i < topLevel.length - 1 && topLevel[i].name !== topLevel[i + 1].name) {
-          const nextTime = formatTimestamp(topLevel[i + 1].time);
+        row.appendChild(div);
+        row.appendChild(actions);
+        messagesDiv.appendChild(row);
+
+        if (i < messages.length - 1 && messages[i].name !== messages[i + 1].name) {
+          const nextTime = formatTimestamp(messages[i + 1].time);
           messagesDiv.appendChild(createTimestampRow(nextTime));
         }
       }
@@ -1218,104 +1495,7 @@
       }
     }
 
-    // Helper: create a message row element. If isReply=true, it will be suitable for an indented replies-wrapper.
-    function createMessageRow(m, isReply = false) {
-      const who = (m.name && String(m.name).trim()) ? String(m.name).trim() : 'Unknown';
-      const text = (m.text && String(m.text)) ? m.text : '';
-
-      const row = document.createElement('div');
-      row.className = isReply ? 'message-row reply-row' : 'message-row';
-      row.style.position = 'relative';
-
-      const div = document.createElement('div');
-      div.className = 'message';
-      try { div.style.background = colorForName(who); } catch (e) { div.style.background = 'rgba(0,0,0,0.45)'; }
-
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'name';
-      nameSpan.textContent = who + ':';
-
-      const contentSpan = document.createElement('span');
-      contentSpan.className = 'content';
-      contentSpan.textContent = ' ' + text;
-
-      div.appendChild(nameSpan);
-      div.appendChild(contentSpan);
-
-      // actions container: contains reply (for top-level) and edit/delete depending on permission
-      const actions = document.createElement('div');
-      actions.className = 'actions';
-
-      // Reply button: only add when not a reply (we don't support replies-to-replies per request).
-      if (!isReply) {
-        const replyBtn = document.createElement('button');
-        replyBtn.type = 'button';
-        replyBtn.className = 'icon-btn reply-btn';
-        replyBtn.title = 'Reply';
-        replyBtn.innerHTML = '↪';
-        replyBtn.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          // Set reply target
-          replyTargetId = m.id;
-          replyTargetName = who;
-          replyIndicatorText.textContent = `Replying to ${who}`;
-          replyIndicator.style.display = 'flex';
-          replyIndicator.setAttribute('aria-hidden', 'false');
-          messageInput.focus();
-        });
-        actions.appendChild(replyBtn);
-      }
-
-      // actions (edit/delete) still appear for messages you can act on
-      const canAct = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
-
-      if (canAct) {
-        const trash = document.createElement('button');
-        trash.className = 'icon-btn trash';
-        trash.title = 'Delete message';
-        trash.innerHTML = '🗑';
-        trash.addEventListener('click', async (ev) => {
-          ev.stopPropagation();
-          const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
-          if (!allowedNow) { alert('Not allowed to delete this message.'); return; }
-          try {
-            // delete the message and any replies referencing it
-            await deleteDoc(doc(db, 'messages', m.id));
-            // delete child replies when deleting top-level
-            const snap = await getDocs(messagesQuery);
-            const deletes = [];
-            snap.forEach(snapDoc => {
-              const sd = snapDoc.data();
-              if (sd.parentId === m.id) deletes.push(deleteDoc(doc(db, 'messages', snapDoc.id)));
-            });
-            if (deletes.length) await Promise.all(deletes);
-          } catch (err) {
-            alert('Failed to delete message: ' + (err.message || err));
-          }
-        });
-        actions.appendChild(trash);
-
-        const edit = document.createElement('button');
-        edit.className = 'icon-btn pencil';
-        edit.title = 'Edit message';
-        edit.innerHTML = '✏';
-        edit.addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
-          if (!allowedNow) { alert('Not allowed to edit this message.'); return; }
-          startEdit(row, div, contentSpan, m);
-        });
-        actions.appendChild(edit);
-      }
-
-      // assemble: message div, then actions
-      row.appendChild(div);
-      row.appendChild(actions);
-
-      return row;
-    }
-
-    // start inline edit for a message row (unchanged behavior)
+    // start inline edit for a message row (unchanged)
     function startEdit(row, messageDiv, contentSpan, m) {
       if (row.querySelector('.edit-area')) return;
 
@@ -1458,31 +1638,13 @@
       const text = (messageInput.value || "").trim();
       if (!sendName || !text) return;
       try {
-        // include parentId when replying
-        const payload = { name: sendName, text, time: serverTimestamp() };
-        if (replyTargetId) payload.parentId = replyTargetId;
-        await addDoc(collection(db, 'messages'), payload);
+        await addDoc(collection(db, 'messages'), { name: sendName, text, time: serverTimestamp() });
         messageInput.value = "";
-        // clear reply state after send
-        replyTargetId = null;
-        replyTargetName = null;
-        replyIndicator.style.display = 'none';
-        replyIndicator.setAttribute('aria-hidden', 'true');
-        replyIndicatorText.textContent = '';
         await enforceRetention();
       } catch (err) {
         alert("Failed to send message: " + err.message);
       }
     }
-
-    // cancel reply button handler
-    cancelReplyBtn.addEventListener('click', () => {
-      replyTargetId = null;
-      replyTargetName = null;
-      replyIndicator.style.display = 'none';
-      replyIndicator.setAttribute('aria-hidden', 'true');
-      replyIndicatorText.textContent = '';
-    });
 
     // clear button state & handler (admin only).
     function updateClearButtonState() {
@@ -1513,30 +1675,62 @@
       }
     });
 
-    // Emoji picker setup (unchanged)
-    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🙂","😉","😊","😍","😎","🤔","🙏","👍","👀","🎉","🔥","💀","😭","😜","🤩","😇","🤖","🫶","😴","🤝","👏","🤷"]; 
-    // populate emoji grid
-    (function setupEmojis(){
-      for(const e of emojis){
-        const b = document.createElement('button');
-        b.className = 'emoji-btn';
-        b.textContent = e;
-        b.addEventListener('click', ()=>{
-          messageInput.value += e;
-          messageInput.focus();
-        });
-        emojiGrid.appendChild(b);
-      }
+    // Emoji picker setup
+    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🙂","😉","😊","😍","😎","🤔","🙏","👍","👀","🎉","🔥","💀","😭","😜","🤩","😇","🤖","🫶","😴","🤝","👏","🤷","🙌","💯","✨"];
+    emojis.forEach(e => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'emoji-btn';
+      b.textContent = e;
+      b.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        insertEmojiAtCursor(messageInput, e);
+        emojiPicker.style.display = 'none';
+        messageInput.focus();
+      });
+      emojiGrid.appendChild(b);
+    });
+
+    emojiBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      emojiPicker.style.display = (emojiPicker.style.display === 'block') ? 'none' : 'block';
+    });
+    document.addEventListener('click', (e) => {
+      if (!emojiRow.contains(e.target)) emojiPicker.style.display = 'none';
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') emojiPicker.style.display = 'none'; });
+
+    function insertEmojiAtCursor(textarea, emoji) {
+      const start = textarea.selectionStart || 0;
+      const end = textarea.selectionEnd || 0;
+      const val = textarea.value;
+      textarea.value = val.slice(0, start) + emoji + val.slice(end);
+      const pos = start + emoji.length;
+      textarea.selectionStart = textarea.selectionEnd = pos;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // How modal handlers
+    howBtn.addEventListener('click', () => { howBackdrop.style.display = 'flex'; });
+    howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
+    howBackdrop.addEventListener('click', e => { if (e.target === howBackdrop) howBackdrop.style.display = 'none'; });
+
+    // init
+    (function init() {
+      clearBtn.style.display = 'none';
+      signOutBtn.style.display = 'none';
+      changePwBtn.style.display = 'none';
+      cpCurrent.style.display = '';
+      accountButtons.classList.add('fade-in');
+      splitTop.style.display = '';
+      splitBottom.style.display = '';
+      requestAnimationFrame(() => {
+        loginCard.classList.add('scale-in');
+      });
+      updateClearButtonState();
+      // ensure admin panel starts hidden (in case CSS transitions toggle)
+      adminPanel.style.display = 'none';
     })();
-
-    emojiBtn.addEventListener('click', ()=>{ emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block'; });
-
-    // Simple handlers for How modal
-    howBtn.addEventListener('click', ()=>{ howBackdrop.style.display='flex'; });
-    howClose.addEventListener('click', ()=>{ howBackdrop.style.display='none'; });
-
-    // Helper: wire up sign-in/out visuals (left as-is)
-
   </script>
 </body>
 </html>
