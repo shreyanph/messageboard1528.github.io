@@ -43,6 +43,35 @@
       color: #fff;
     }
 
+    /* Left DM panel (slightly to the left of How To Use) */
+    #dmPanel {
+      position: fixed;
+      top: 12px;
+      left: -170px; /* slightly to the left of the How To Use button */
+      width: 160px;
+      z-index: 5002;
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 8px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      color: #fff;
+    }
+    .dm-acc-btn {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+    }
+    .dm-acc-btn:hover { background: rgba(255,255,255,0.06); }
+
     /* SIGN OUT button (top-right of screen) - red background requested */
     #signOutBtn {
       position: fixed;
@@ -604,14 +633,65 @@
       margin: 8px 0;
       font-size: 0.95em;
     }
+    /* Cancel reply button - RED background per request */
     .reply-indicator .cancel-reply {
-      background: rgba(255,255,255,0.06);
+      background: rgba(220,20,60,0.95); /* red background */
       border: none;
       color: #fff;
       padding: 6px 8px;
       border-radius: 6px;
       cursor: pointer;
     }
+
+    /* Send button - GREEN background per request */
+    #sendBtn {
+      background: rgba(0,180,0,0.95); /* green */
+      border: none;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    /* Delete Current Message button (red) */
+    #deleteCurrentBtn {
+      background: rgba(220,20,60,0.95); /* red */
+      border: none;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: 8px;
+      margin-top: 10px;
+    }
+
+    /* DM confirm modal styling (reusing how-modal look) */
+    .dm-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 6500;
+      align-items: center;
+      justify-content: center;
+    }
+    .dm-modal {
+      width: 360px;
+      background: rgba(0,0,0,0.9);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 14px;
+      color: #fff;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+    .dm-modal .dm-actions { display:flex; gap:12px; width:100%; justify-content:center; }
+    .dm-yes { background: rgba(0,180,0,0.95); border: none; color:#fff; padding:8px 14px; border-radius:6px; cursor:pointer; }
+    .dm-no  { background: rgba(220,20,60,0.95); border: none; color:#fff; padding:8px 14px; border-radius:6px; cursor:pointer; }
 
     @media (max-width: 640px) {
       .page-inner { margin: 20px; max-width: 100%; }
@@ -623,6 +703,8 @@
       #bootLogo { width: 220px; height: 220px; }
       .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
       .replies-wrapper { margin-left: 32px; padding-left: 10px; }
+      #dmPanel { left: -140px; width: 140px; }
+      .dm-modal { width: 92%; }
     }
   </style>
 </head>
@@ -681,6 +763,9 @@
     </div>
   </div>
 
+  <!-- Left DM panel (accounts except Administrator) -->
+  <div id="dmPanel" aria-hidden="true"></div>
+
   <div class="page-inner">
     <!-- How To Use button -->
     <button id="howBtn">How To Use</button>
@@ -720,7 +805,10 @@
     </div>
 
     <br>
-    <button id="sendBtn">Send</button>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button id="sendBtn">Send</button>
+      <button id="deleteCurrentBtn" title="Clear current message">Delete Current Message</button>
+    </div>
 
     <h2>Message History</h2>
     <button id="clearBtn" title="Only Administrator may clear history">Clear Message History</button>
@@ -747,6 +835,17 @@
       <div style="display:flex; gap:8px; justify-content:flex-end;">
         <button id="cpSaveBtn">Save</button>
         <button id="cpCancelBtn" style="background:rgba(255,255,255,0.06);">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DM confirm modal -->
+  <div id="dmBackdrop" class="dm-backdrop" role="dialog" aria-modal="true">
+    <div class="dm-modal" role="document">
+      <div id="dmModalText" style="font-size:1em; text-align:center;"></div>
+      <div class="dm-actions">
+        <button id="dmYesBtn" class="dm-yes">Yes</button>
+        <button id="dmNoBtn" class="dm-no">No</button>
       </div>
     </div>
   </div>
@@ -799,6 +898,7 @@
     const nameSelect = document.getElementById('nameSelect');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
+    const deleteCurrentBtn = document.getElementById('deleteCurrentBtn');
     const clearBtn = document.getElementById('clearBtn');
     const messagesDiv = document.getElementById('messages');
 
@@ -865,6 +965,13 @@
     const replyIndicatorText = document.getElementById('replyIndicatorText');
     const cancelReplyBtn = document.getElementById('cancelReplyBtn');
 
+    // DM UI refs
+    const dmPanel = document.getElementById('dmPanel');
+    const dmBackdrop = document.getElementById('dmBackdrop');
+    const dmModalText = document.getElementById('dmModalText');
+    const dmYesBtn = document.getElementById('dmYesBtn');
+    const dmNoBtn = document.getElementById('dmNoBtn');
+
     // hide page until login
     pageInner.style.display = 'none';
 
@@ -881,6 +988,10 @@
     // reply target state
     let replyTargetId = null;
     let replyTargetName = null;
+
+    // DM state
+    let pendingDMTarget = null; // account clicked in left panel awaiting confirmation
+    let dmModeTarget = null; // when set, we are in a DM conversation with this account
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -910,7 +1021,7 @@
       }
     })();
 
-    // realtime accounts listener -> populates login overlay and admin panel & nameSelect
+    // realtime accounts listener -> populates login overlay and admin panel & nameSelect & DM panel
     onSnapshot(accountsDocRef, snap => {
       const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
       populateAccounts(list);
@@ -1040,6 +1151,34 @@
         nameSelect.appendChild(opt);
       }
       updateClearButtonState();
+
+      // populate DM panel with accounts except Administrator
+      dmPanel.innerHTML = '';
+      if (Array.isArray(list)) {
+        for (const nm of finalList) {
+          if (!nm || nm === ADMIN_NAME) continue;
+          const b = document.createElement('button');
+          b.className = 'dm-acc-btn';
+          b.type = 'button';
+          b.textContent = nm;
+          b.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            // require signed in to create a DM
+            if (!currentUser) {
+              alert('Sign in first to create a DM.');
+              return;
+            }
+            pendingDMTarget = nm;
+            dmModalText.textContent = `Create DM with ${nm}?`;
+            dmBackdrop.style.display = 'flex';
+          });
+          dmPanel.appendChild(b);
+        }
+        // make sure the panel is visible when accounts exist
+        dmPanel.style.display = finalList.length > 1 ? 'flex' : 'none';
+      } else {
+        dmPanel.style.display = 'none';
+      }
 
       // If the login overlay is visible, play the split-open reveal animation for account list
       if (loginOverlay.style.display !== 'none' && accountButtons.style.visibility !== 'hidden') {
@@ -1386,6 +1525,9 @@
       // fold admin panel when signing out
       hideAdminPanel();
 
+      // exit DM mode on sign out
+      dmModeTarget = null;
+
       setTimeout(() => {
         pageInner.style.display = 'none';
         pageInner.classList.remove('fade-out');
@@ -1499,7 +1641,8 @@
           name: d.name,
           text: d.text || "",
           time: d.time || null,
-          parentId: d.parentId || null
+          parentId: d.parentId || null,
+          dmTarget: d.dmTarget || null
         });
       });
       lastMessages = msgs;
@@ -1512,10 +1655,36 @@
       messagesDiv.innerHTML = "";
       if (!Array.isArray(messages) || messages.length === 0) return;
 
-      // Build replies map: parentId => [replyMsgs]
+      // Filter messages depending on DM mode:
+      // - If not in DM mode: show only public messages (dmTarget == null)
+      // - If in DM mode: show only messages that are DMs between currentUser and dmModeTarget
+      let visibleMessages = [];
+      if (!dmModeTarget) {
+        visibleMessages = messages.filter(m => !m.dmTarget);
+      } else {
+        if (!currentUser) {
+          // no signed in user -> nothing to show in DM mode
+          visibleMessages = [];
+        } else {
+          visibleMessages = messages.filter(m => {
+            if (!m.dmTarget) return false;
+            // m.dmTarget is the recipient of the DM (the "other" or the target)
+            // We show message when:
+            //   - message sent by currentUser to dmModeTarget
+            //   - message sent by dmModeTarget to currentUser
+            const sentBy = (m.name || "");
+            const t = m.dmTarget;
+            return (t === dmModeTarget && sentBy === currentUser) || (t === currentUser && sentBy === dmModeTarget);
+          });
+        }
+      }
+
+      if (visibleMessages.length === 0) return;
+
+      // Build replies map for visible messages only: parentId => [replyMsgs]
       const repliesByParent = {};
       const topLevel = [];
-      for (const m of messages) {
+      for (const m of visibleMessages) {
         if (m.parentId) {
           repliesByParent[m.parentId] = repliesByParent[m.parentId] || [];
           repliesByParent[m.parentId].push(m);
@@ -1553,12 +1722,11 @@
         div.appendChild(nameSpan);
         div.appendChild(contentSpan);
 
-        // Reply button (now appears only on hover, via CSS)
+        // Reply button (now appears only on hover, via CSS) -- only allowed for top-level visible messages
         const replyBtn = document.createElement('button');
         replyBtn.type = 'button';
         replyBtn.className = 'icon-btn reply-btn';
         replyBtn.title = 'Reply';
-        // arrow glyph (white) pointing right/up style; clear and legible
         replyBtn.innerHTML = '↪';
 
         replyBtn.addEventListener('click', (ev) => {
@@ -1589,10 +1757,8 @@
             if (!allowedNow) { alert('Not allowed to delete this message.'); return; }
             try {
               // delete the message and any replies referencing it
-              // delete message doc
               await deleteDoc(doc(db, 'messages', m.id));
               // find replies and delete them (optional: could keep replies; here we delete)
-              // (we'll attempt to remove replies that have parentId == m.id)
               const snap = await getDocs(messagesQuery);
               const deletes = [];
               snap.forEach(snapDoc => {
@@ -1855,6 +2021,17 @@
       }
     });
 
+    // Delete Current Message clears the message input (red button)
+    deleteCurrentBtn.addEventListener('click', () => {
+      messageInput.value = '';
+      // also cancel reply state if any
+      replyTargetId = null;
+      replyTargetName = null;
+      replyIndicator.style.display = 'none';
+      replyIndicator.setAttribute('aria-hidden', 'true');
+      replyIndicatorText.textContent = '';
+    });
+
     async function addMessage() {
       let sendName;
       if (currentUser && currentUser !== ADMIN_NAME) sendName = currentUser;
@@ -1865,6 +2042,10 @@
         // include parentId when replying
         const payload = { name: sendName, text, time: serverTimestamp() };
         if (replyTargetId) payload.parentId = replyTargetId;
+        // If DM mode active, add dmTarget to the payload
+        if (dmModeTarget) {
+          payload.dmTarget = dmModeTarget;
+        }
         await addDoc(collection(db, 'messages'), payload);
         messageInput.value = "";
         // clear reply state after send
@@ -1886,6 +2067,25 @@
       replyIndicator.style.display = 'none';
       replyIndicator.setAttribute('aria-hidden', 'true');
       replyIndicatorText.textContent = '';
+    });
+
+    // DM modal handlers
+    dmNoBtn.addEventListener('click', () => {
+      pendingDMTarget = null;
+      dmBackdrop.style.display = 'none';
+    });
+    dmYesBtn.addEventListener('click', () => {
+      if (!pendingDMTarget) {
+        dmBackdrop.style.display = 'none';
+        return;
+      }
+      // create DM with pendingDMTarget
+      dmModeTarget = pendingDMTarget;
+      pendingDMTarget = null;
+      dmBackdrop.style.display = 'none';
+      // re-render messages to show DM conversation only
+      renderMessages(lastMessages);
+      alert(`DM with ${dmModeTarget} created. Messages you send will go only to ${dmModeTarget} until you sign out or refresh.`);
     });
 
     // clear button state & handler (admin only).
