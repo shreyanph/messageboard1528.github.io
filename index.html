@@ -289,32 +289,6 @@
     }
     .account-btn:hover { background: rgba(255,255,255,0.06); }
 
-    /* DM card: exact same style as login-card (user requested identical look/behavior) */
-    .dm-card {
-      position: fixed;
-      top: 12px;
-      left: 20px; /* user earlier said left:20px works; keeps it visible */
-      z-index: 5002;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      background: rgba(0,0,0,0.65);
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 26px 28px;
-      border-radius: 12px;
-      min-width: 320px;
-      min-height: 220px; /* smaller height than login but same look */
-      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
-      overflow: hidden;
-      transform-origin: center center;
-      opacity: 1;
-      transform: scaleY(0);
-      transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 420ms ease;
-    }
-    .dm-card.scale-in { transform: scaleY(1); }
-
     /* ---------- REVERTED PASSWORD AREA CSS (from the snippet you provided) ---------- */
     /* Password area: simple, no show/fade classes */
     #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
@@ -663,32 +637,21 @@
       margin-top: 10px;
     }
 
-    /* DM confirm modal styling (reusing how-modal look) */
-    .dm-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 6500;
-      align-items: center;
-      justify-content: center;
-    }
-    .dm-modal {
-      width: 360px;
-      background: rgba(0,0,0,0.9);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 8px;
-      padding: 14px;
-      color: #fff;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    /* layout for From / Chatting With rows */
+    .from-row, .chat-with-row {
       display: flex;
-      flex-direction: column;
-      gap: 12px;
       align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
     }
-    .dm-modal .dm-actions { display:flex; gap:12px; width:100%; justify-content:center; }
-    .dm-yes { background: rgba(0,180,0,0.95); border: none; color:#fff; padding:8px 14px; border-radius:6px; cursor:pointer; }
-    .dm-no  { background: rgba(220,20,60,0.95); border: none; color:#fff; padding:8px 14px; border-radius:6px; cursor:pointer; }
+    .from-row label, .chat-with-row label {
+      white-space: nowrap;
+      font-weight: 600;
+      color: #fff;
+    }
+    .from-row select, .chat-with-row select {
+      min-width: 220px;
+    }
 
     @media (max-width: 640px) {
       .page-inner { margin: 20px; max-width: 100%; }
@@ -700,8 +663,7 @@
       #bootLogo { width: 220px; height: 220px; }
       .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
       .replies-wrapper { margin-left: 32px; padding-left: 10px; }
-      .dm-card { left: 12px; min-width: 260px; }
-      .dm-modal { width: 92%; }
+      .from-row select, .chat-with-row select { min-width: 140px; }
     }
   </style>
 </head>
@@ -760,13 +722,6 @@
     </div>
   </div>
 
-  <!-- DM panel: now a dm-card matching the lock-screen account listing panel -->
-  <div id="dmPanel" class="dm-card" aria-hidden="true" style="display:none;">
-    <div id="dmAvatar" class="avatar" aria-hidden="true"></div>
-    <div class="login-title">Direct Messages</div>
-    <div id="dmAccountButtons" style="display:flex; flex-direction:column; gap:8px; align-items:center; width:100%;"></div>
-  </div>
-
   <div class="page-inner">
     <!-- How To Use button -->
     <button id="howBtn">How To Use</button>
@@ -783,10 +738,24 @@
 
     <h2 style="margin-top:6px;">Message Board</h2>
 
-    <select id="nameSelect" required>
-      <option value="" disabled selected>Select a name</option>
-    </select>
-    <br><br>
+    <!-- FROM row: exact text "From: " to the left of the select -->
+    <div class="from-row" aria-hidden="false">
+      <label for="nameSelect">From:</label>
+      <select id="nameSelect" required>
+        <option value="" disabled selected>Select a name</option>
+      </select>
+    </div>
+
+    <!-- Chatting With dropdown (all accounts + Main Server default) -->
+    <div class="chat-with-row">
+      <label for="chatWithSelect">Chatting With:</label>
+      <select id="chatWithSelect" required>
+        <option value="Main Server" selected>Main Server</option>
+        <!-- accounts will be appended dynamically -->
+      </select>
+    </div>
+
+    <br>
 
     <!-- emoji-row: textarea + emoji button on same row -->
     <div class="emoji-row" id="emojiRow" style="position:relative;">
@@ -840,17 +809,6 @@
     </div>
   </div>
 
-  <!-- DM confirm modal -->
-  <div id="dmBackdrop" class="dm-backdrop" role="dialog" aria-modal="true">
-    <div class="dm-modal" role="document">
-      <div id="dmModalText" style="font-size:1em; text-align:center;"></div>
-      <div class="dm-actions">
-        <button id="dmYesBtn" class="dm-yes">Yes</button>
-        <button id="dmNoBtn" class="dm-no">No</button>
-      </div>
-    </div>
-  </div>
-
   <!-- How To Use modal -->
   <div id="howBackdrop" class="how-modal-backdrop" role="dialog" aria-modal="true">
     <div class="how-modal" role="document">
@@ -897,6 +855,7 @@
 
     // DOM refs
     const nameSelect = document.getElementById('nameSelect');
+    const chatWithSelect = document.getElementById('chatWithSelect');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
     const deleteCurrentBtn = document.getElementById('deleteCurrentBtn');
@@ -966,15 +925,6 @@
     const replyIndicatorText = document.getElementById('replyIndicatorText');
     const cancelReplyBtn = document.getElementById('cancelReplyBtn');
 
-    // DM UI refs
-    const dmPanel = document.getElementById('dmPanel');
-    const dmAvatar = document.getElementById('dmAvatar');
-    const dmAccountButtons = document.getElementById('dmAccountButtons');
-    const dmBackdrop = document.getElementById('dmBackdrop');
-    const dmModalText = document.getElementById('dmModalText');
-    const dmYesBtn = document.getElementById('dmYesBtn');
-    const dmNoBtn = document.getElementById('dmNoBtn');
-
     // hide page until login
     pageInner.style.display = 'none';
 
@@ -991,10 +941,6 @@
     // reply target state
     let replyTargetId = null;
     let replyTargetName = null;
-
-    // DM state
-    let pendingDMTarget = null; // account clicked in left panel awaiting confirmation
-    let dmModeTarget = null; // when set, we are in a DM conversation with this account
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -1024,7 +970,7 @@
       }
     })();
 
-    // realtime accounts listener -> populates login overlay and admin panel & nameSelect & DM panel
+    // realtime accounts listener -> populates login overlay and admin panel & nameSelect & chatWithSelect
     onSnapshot(accountsDocRef, snap => {
       const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
       populateAccounts(list);
@@ -1133,7 +1079,7 @@
         });
       }
 
-      // populate nameSelect
+      // populate nameSelect (From:)
       nameSelect.innerHTML = "";
       const placeholder = document.createElement('option');
       placeholder.value = "";
@@ -1153,60 +1099,27 @@
         opt.textContent = n;
         nameSelect.appendChild(opt);
       }
-      updateClearButtonState();
 
-      // populate DM panel with accounts except Administrator
-      dmAccountButtons.innerHTML = '';
-      if (Array.isArray(finalList)) {
-        for (const nm of finalList) {
-          if (!nm || nm === ADMIN_NAME) continue;
-          const b = document.createElement('button');
-          b.className = 'account-btn'; // reuse exact account button style for identical appearance
-          b.type = 'button';
-          b.textContent = nm;
+      // populate chatWithSelect (Chatting With:)
+      // Keep "Main Server" as the first/default option
+      chatWithSelect.innerHTML = "";
+      const mainOpt = document.createElement('option');
+      mainOpt.value = "Main Server";
+      mainOpt.textContent = "Main Server";
+      mainOpt.selected = true;
+      chatWithSelect.appendChild(mainOpt);
 
-          // hover behavior: show initial in dm avatar (mirrors login overlay)
-          b.addEventListener('mouseenter', () => {
-            if (!passwordFlow.active) {
-              const ch = (nm && typeof nm === 'string') ? nm.trim().charAt(0).toUpperCase() : '';
-              dmAvatar.textContent = ch;
-            }
-          });
-          b.addEventListener('mouseleave', () => {
-            if (!passwordFlow.active) dmAvatar.textContent = '';
-          });
-
-          b.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            // require signed in to create a DM
-            if (!currentUser) {
-              alert('Sign in first to create a DM.');
-              return;
-            }
-            pendingDMTarget = nm;
-            dmModalText.textContent = (dmModeTarget === nm)
-              ? `Continue DM with ${nm}?`
-              : (dmModeTarget ? `Create DM with ${nm}?` : `Create DM with ${nm}?`);
-            dmBackdrop.style.display = 'flex';
-          });
-          dmAccountButtons.appendChild(b);
-        }
-        // panel should be visible only when we are on main message center (not lock screen / password entry)
-        const shouldShowDMPanel = (document.body.contains(pageInner) && pageInner.style.display !== 'none' && !passwordFlow.active && finalList.length > 1);
-        dmPanel.style.display = shouldShowDMPanel ? 'flex' : 'none';
-
-        // animate in if shown (match login-card scale-in effect)
-        if (shouldShowDMPanel) {
-          // ensure collapsed then trigger scale-in to match lock-screen animation
-          dmPanel.classList.remove('scale-in');
-          void dmPanel.offsetWidth;
-          dmPanel.classList.add('scale-in');
-        } else {
-          dmPanel.classList.remove('scale-in');
-        }
-      } else {
-        dmPanel.style.display = 'none';
+      const seen3 = new Set();
+      for (const n of finalList) {
+        if (!n || seen3.has(n)) continue;
+        seen3.add(n);
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        chatWithSelect.appendChild(opt);
       }
+
+      updateClearButtonState();
 
       // If the login overlay is visible, play the split-open reveal animation for account list
       if (loginOverlay.style.display !== 'none' && accountButtons.style.visibility !== 'hidden') {
@@ -1313,9 +1226,6 @@
         enterPw.style.display = 'none';
         createPw.style.display = 'flex';
       }
-
-      // When entering password flow, hide dmPanel (user requested DM panel only in main center)
-      dmPanel.style.display = 'none';
     }
 
     // ---------- REVERTED endPasswordFlow ----------
@@ -1335,15 +1245,6 @@
       pwErr.style.display = 'none';
       pwErr.textContent = '';
       passwordInput.classList.remove('input-error');
-
-      // ensure DM panel visibility is recalculated (we are back to main center)
-      // populateAccounts will set dmPanel visibility next time accounts are updated,
-      // but ensure a quick recalculation here:
-      const shouldShow = (pageInner.style.display !== 'none' && !passwordFlow.active);
-      if (shouldShow && dmAccountButtons.childElementCount > 0) {
-        dmPanel.style.display = 'flex';
-        dmPanel.classList.add('scale-in');
-      }
     }
 
     document.getElementById('cancelPwBtn').addEventListener('click', endPasswordFlow);
@@ -1523,13 +1424,6 @@
 
       // re-render messages so action buttons update to match currentUser
       renderMessages(lastMessages);
-
-      // Show DM panel now that we are in main message center (if accounts present)
-      const showDM = (dmAccountButtons.childElementCount > 0);
-      if (showDM) {
-        dmPanel.style.display = 'flex';
-        dmPanel.classList.add('scale-in');
-      }
     }
 
     // Helper: show/hide admin panel with CSS class so it unfolds/folds
@@ -1571,9 +1465,6 @@
 
       // fold admin panel when signing out
       hideAdminPanel();
-
-      // exit DM mode on sign out
-      dmModeTarget = null;
 
       setTimeout(() => {
         pageInner.style.display = 'none';
@@ -1702,26 +1593,24 @@
       messagesDiv.innerHTML = "";
       if (!Array.isArray(messages) || messages.length === 0) return;
 
-      // Filter messages depending on DM mode:
-      // - If not in DM mode: show only public messages (dmTarget == null)
-      // - If in DM mode: show only messages that are DMs between currentUser and dmModeTarget
+      // Determine current chat context from chatWithSelect
+      const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
+
+      // Filter messages depending on Chatting With:
+      // - If chatWith == "Main Server": show only public messages (dmTarget == null)
+      // - Else (chatWith is an account): show messages that are DMs between currentUser and chatWith
       let visibleMessages = [];
-      if (!dmModeTarget) {
+      if (chatWith === "Main Server") {
         visibleMessages = messages.filter(m => !m.dmTarget);
       } else {
         if (!currentUser) {
-          // no signed in user -> nothing to show in DM mode
           visibleMessages = [];
         } else {
           visibleMessages = messages.filter(m => {
             if (!m.dmTarget) return false;
-            // m.dmTarget is the recipient of the DM (the "other" or the target)
-            // We show message when:
-            //   - message sent by currentUser to dmModeTarget
-            //   - message sent by dmModeTarget to currentUser
             const sentBy = (m.name || "");
             const t = m.dmTarget;
-            return (t === dmModeTarget && sentBy === currentUser) || (t === currentUser && sentBy === dmModeTarget);
+            return (t === chatWith && sentBy === currentUser) || (t === currentUser && sentBy === chatWith);
           });
         }
       }
@@ -2089,10 +1978,13 @@
         // include parentId when replying
         const payload = { name: sendName, text, time: serverTimestamp() };
         if (replyTargetId) payload.parentId = replyTargetId;
-        // If DM mode active, add dmTarget to the payload
-        if (dmModeTarget) {
-          payload.dmTarget = dmModeTarget;
+
+        // Use Chatting With dropdown to decide if this is a DM or main server message
+        const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
+        if (chatWith && chatWith !== "Main Server") {
+          payload.dmTarget = chatWith;
         }
+
         await addDoc(collection(db, 'messages'), payload);
         messageInput.value = "";
         // clear reply state after send
@@ -2116,23 +2008,9 @@
       replyIndicatorText.textContent = '';
     });
 
-    // DM modal handlers
-    dmNoBtn.addEventListener('click', () => {
-      pendingDMTarget = null;
-      dmBackdrop.style.display = 'none';
-    });
-    dmYesBtn.addEventListener('click', () => {
-      if (!pendingDMTarget) {
-        dmBackdrop.style.display = 'none';
-        return;
-      }
-      // create or continue DM with pendingDMTarget (no alert, no extra pop-up)
-      dmModeTarget = pendingDMTarget;
-      pendingDMTarget = null;
-      dmBackdrop.style.display = 'none';
-      // re-render messages to show DM conversation only
+    // when the chatWithSelect changes, re-render visible messages
+    chatWithSelect.addEventListener('change', () => {
       renderMessages(lastMessages);
-      // (intentionally do NOT show an alert here — user requested no confirmation popup)
     });
 
     // clear button state & handler (admin only).
