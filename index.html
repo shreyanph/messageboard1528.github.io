@@ -311,7 +311,8 @@
     #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
 
     /* Admin panel (centered) -- updated to animate open/close (unfold) */
-    #adminPanel {
+    /* servers panel shares same visual style as adminPanel */
+    #adminPanel, #serversPanel {
       margin: 8px auto 16px auto;
       z-index: 500;
       background: rgba(0,0,0,0.7);
@@ -335,7 +336,7 @@
       pointer-events: none;
     }
     /* when open, allow interactions and expand */
-    #adminPanel.panel-open {
+    #adminPanel.panel-open, #serversPanel.panel-open {
       max-height: 520px;               /* large enough for content (adjust if needed) */
       opacity: 1;
       transform: scaleY(1);
@@ -344,6 +345,10 @@
 
     #accountsList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
     #accountsList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
+
+    /* Servers list styling (same as accounts list) */
+    #serversList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
+    #serversList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
 
     /* Remove button in admin panel: red background */
     .remove-account {
@@ -793,6 +798,13 @@
       <ul id="accountsList" aria-live="polite"></ul>
     </div>
 
+    <!-- Servers panel (identical layout & style to accounts panel) -->
+    <div id="serversPanel" aria-hidden="true" style="display:none;">
+      <h4>Servers (cloud)</h4>
+      <!-- no change-password here — only list with delete (where appropriate) -->
+      <ul id="serversList" aria-live="polite"></ul>
+    </div>
+
     <h2 style="margin-top:6px;">Message Board</h2>
 
     <!-- FROM row: exact text "From: " to the left of the select -->
@@ -1011,6 +1023,10 @@
     const membersList = document.getElementById('membersList');
     const createServerBtn = document.getElementById('createServerBtn');
 
+    // Servers panel refs
+    const serversPanel = document.getElementById('serversPanel');
+    const serversList = document.getElementById('serversList');
+
     // hide page until login
     pageInner.style.display = 'none';
 
@@ -1030,7 +1046,7 @@
     let replyTargetName = null;
 
     // servers map (local cache)
-    let serversMap = {}; // { serverName: [member1, member2, ...], ... }
+    let serversMap = {}; // { serverName: [member1, member2, ...] OR { members: [...], creator: 'name' }, ... }
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -1075,10 +1091,13 @@
       serversMap = Object.assign({}, data);
       // refresh chat-with options to include servers appropriately
       refreshChatWithOptions();
+      // update servers panel contents for current user (if signed in)
+      populateServersFor(currentUser);
     }, err => {
       console.warn('Servers listener error:', err);
       serversMap = {};
       refreshChatWithOptions();
+      populateServersFor(currentUser);
     });
 
     function populateAccounts(list) {
@@ -1454,6 +1473,11 @@
         adminPanel.setAttribute('aria-hidden', 'true');
       }
 
+      // Servers panel should be visible for EVERY signed-in account.
+      serversPanel.style.display = ''; // allow CSS transitions to make it visible via class
+      serversPanel.classList.add('panel-open');
+      serversPanel.setAttribute('aria-hidden', 'false');
+
       if (currentUser === ADMIN_NAME) {
         let found = false;
         for (let i = 0; i < nameSelect.options.length; i++) {
@@ -1511,6 +1535,9 @@
       // refresh chat-with options to remove currentUser as a choice (can't DM yourself)
       refreshChatWithOptions();
 
+      // populate servers panel for this account
+      populateServersFor(currentUser);
+
       // re-render messages so action buttons update to match currentUser
       renderMessages(lastMessages);
     }
@@ -1554,6 +1581,10 @@
 
       // fold admin panel when signing out
       hideAdminPanel();
+      // hide servers panel when signed out
+      serversPanel.classList.remove('panel-open');
+      serversPanel.style.display = 'none';
+      serversPanel.setAttribute('aria-hidden', 'true');
 
       setTimeout(() => {
         pageInner.style.display = 'none';
@@ -1678,6 +1709,19 @@
       console.error("Realtime messages error:", err);
     });
 
+    // Helper that normalizes server entry formats (legacy array or new object)
+    function getServerData(serverName) {
+      const entry = serversMap && serversMap[serverName];
+      if (!entry) return { members: [], creator: null };
+      if (Array.isArray(entry)) return { members: entry.slice(), creator: null };
+      if (typeof entry === 'object') {
+        const members = Array.isArray(entry.members) ? entry.members.slice() : [];
+        const creator = entry.creator || null;
+        return { members, creator };
+      }
+      return { members: [], creator: null };
+    }
+
     function renderMessages(messages) {
       messagesDiv.innerHTML = "";
       if (!Array.isArray(messages) || messages.length === 0) return;
@@ -1694,7 +1738,8 @@
         visibleMessages = messages.filter(m => !m.dmTarget);
       } else if (serversMap && Object.prototype.hasOwnProperty.call(serversMap, chatWith)) {
         // chatWith is a server
-        const members = Array.isArray(serversMap[chatWith]) ? serversMap[chatWith] : [];
+        const sd = getServerData(chatWith);
+        const members = sd.members;
         if (!currentUser || !members.includes(currentUser)) {
           // not a member: show nothing
           visibleMessages = [];
@@ -1834,181 +1879,72 @@
           replies.sort((a,b) => {
             const ta = a.time && a.time.toDate ? a.time.toDate().getTime() : (new Date(a.time || 0)).getTime();
             const tb = b.time && b.time.toDate ? b.time.toDate().getTime() : (new Date(b.time || 0)).getTime();
-            return (ta || 0) - (tb || 0);
+            return ta - tb;
           });
-
-          const wrapper = document.createElement('div');
-          wrapper.className = 'replies-wrapper';
-
-          // Render each reply as a normal message row (indented) but without reply button
+          const wrap = document.createElement('div');
+          wrap.className = 'replies-wrapper';
           for (const r of replies) {
-            const whoR = (r.name && String(r.name).trim()) ? String(r.name).trim() : 'Unknown';
-            const textR = (r.text && String(r.text)) ? r.text : '';
-
-            const rowR = document.createElement('div');
-            rowR.className = 'message-row';
-            rowR.style.position = 'relative';
-
-            const divR = document.createElement('div');
-            divR.className = 'message';
-            try { divR.style.background = colorForName(whoR); } catch (e) { divR.style.background = 'rgba(0,0,0,0.45)'; }
-
-            const nameSpanR = document.createElement('span');
-            nameSpanR.className = 'name';
-            nameSpanR.textContent = whoR + ':';
-
-            const contentSpanR = document.createElement('span');
-            contentSpanR.className = 'content';
-            contentSpanR.textContent = ' ' + textR;
-
-            divR.appendChild(nameSpanR);
-            divR.appendChild(contentSpanR);
-
-            // actions for replies: same as normal messages (edit/delete when allowed)
-            const actionsR = document.createElement('div');
-            actionsR.className = 'actions';
-
-            const canActR = (currentUser === ADMIN_NAME) || (currentUser && currentUser === whoR);
-
-            if (canActR) {
-              const trashR = document.createElement('button');
-              trashR.className = 'icon-btn trash';
-              trashR.title = 'Delete reply';
-              trashR.innerHTML = '🗑';
-              trashR.addEventListener('click', async (ev) => {
-                ev.stopPropagation();
-                const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === whoR);
-                if (!allowedNow) { alert('Not allowed to delete this reply.'); return; }
-                try {
-                  await deleteDoc(doc(db, 'messages', r.id));
-                } catch (err) {
-                  alert('Failed to delete reply: ' + (err.message || err));
-                }
-              });
-              actionsR.appendChild(trashR);
-
-              const editR = document.createElement('button');
-              editR.className = 'icon-btn pencil';
-              editR.title = 'Edit reply';
-              editR.innerHTML = '✏';
-              editR.addEventListener('click', (ev) => {
-                ev.stopPropagation();
-                const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === whoR);
-                if (!allowedNow) { alert('Not allowed to edit this reply.'); return; }
-                startEdit(rowR, divR, contentSpanR, r);
-              });
-              actionsR.appendChild(editR);
-            }
-
-            // assemble reply row (no replyBtn, so users cannot reply-to-reply)
-            rowR.appendChild(divR);
-            rowR.appendChild(actionsR);
-            wrapper.appendChild(rowR);
+            const el = document.createElement('div');
+            el.className = 'reply';
+            const who2 = (r.name && String(r.name).trim()) ? r.name : 'Unknown';
+            el.innerHTML = `<span class="r-name">${who2}:</span> ${String(r.text || '')}`;
+            wrap.appendChild(el);
           }
-
-          messagesDiv.appendChild(wrapper);
+          messagesDiv.appendChild(wrap);
         }
-
-        // add timestamp separators when name changes or next top-level
-        if (i < topLevel.length - 1 && topLevel[i].name !== topLevel[i + 1].name) {
-          const nextTime = formatTimestamp(topLevel[i + 1].time);
-          messagesDiv.appendChild(createTimestampRow(nextTime));
-        }
-      }
-
-      if (messagesDiv.lastElementChild) {
-        messagesDiv.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
     }
 
-    // start inline edit for a message row (unchanged)
-    function startEdit(row, messageDiv, contentSpan, m) {
-      if (row.querySelector('.edit-area')) return;
+    // small helpers used above (formatTimestamp, createTimestampRow, startEdit, etc.)
+    function formatTimestamp(ts) {
+      if (!ts) return '';
+      try {
+        const d = ts.toDate ? ts.toDate() : new Date(ts);
+        return d.toLocaleString();
+      } catch (e) {
+        return '';
+      }
+    }
+    function createTimestampRow(text) {
+      const r = document.createElement('div');
+      r.className = 'timestamp-row';
+      const l = document.createElement('div'); l.className = 'line';
+      const t = document.createElement('div'); t.className = 'timestamp-text'; t.textContent = text || '';
+      const r2 = document.createElement('div'); r2.className = 'line';
+      r.appendChild(l);
+      r.appendChild(t);
+      r.appendChild(r2);
+      return r;
+    }
 
-      const originalText = m.text || '';
-      const editWrap = document.createElement('div');
-      editWrap.className = 'edit-area';
-
+    // start inline edit
+    function startEdit(row, div, contentSpan, messageObj) {
+      const parent = div.parentElement;
+      const ed = document.createElement('div');
+      ed.className = 'edit-area';
       const ta = document.createElement('textarea');
-      ta.value = originalText;
-      ta.style.minWidth = '260px';
-      ta.style.maxWidth = '420px';
-
-      const saveBtn = document.createElement('button');
-      saveBtn.textContent = 'Save';
-      saveBtn.className = 'icon-btn save-btn';
-
-      const cancelBtn = document.createElement('button');
-      cancelBtn.textContent = 'Cancel';
-      cancelBtn.className = 'icon-btn cancel-btn';
-
-      editWrap.appendChild(ta);
-      editWrap.appendChild(saveBtn);
-      editWrap.appendChild(cancelBtn);
-
-      contentSpan.style.display = 'none';
-      messageDiv.appendChild(editWrap);
-
-      ta.focus();
-      ta.selectionStart = ta.value.length;
-
-      ta.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          saveBtn.click();
-        }
-      });
-
-      cancelBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        editWrap.remove();
-        contentSpan.style.display = '';
-      });
-
-      saveBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const newText = (ta.value || '').trim();
-        const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === m.name);
-        if (!allowedNow) { alert('Not allowed to edit this message.'); editWrap.remove(); contentSpan.style.display = ''; return; }
-
+      ta.value = messageObj.text || '';
+      ed.appendChild(ta);
+      const save = document.createElement('button');
+      save.className = 'icon-btn';
+      save.textContent = 'Save';
+      save.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
         try {
-          await setDoc(doc(db, 'messages', m.id), { text: newText }, { merge: true });
-          editWrap.remove();
-          contentSpan.textContent = ' ' + newText;
-          contentSpan.style.display = '';
+          await setDoc(doc(db, 'messages', messageObj.id), { name: messageObj.name, text: ta.value, time: messageObj.time, parentId: messageObj.parentId || null, dmTarget: messageObj.dmTarget || null }, { merge: true });
         } catch (err) {
           alert('Failed to save edit: ' + (err.message || err));
         }
       });
-    }
-
-    function createTimestampRow(text) {
-      const row = document.createElement('div');
-      row.className = 'timestamp-row';
-      const left = document.createElement('div'); left.className = 'line';
-      const mid = document.createElement('div'); mid.className = 'timestamp-text'; mid.textContent = text || '';
-      const right = document.createElement('div'); right.className = 'line';
-      row.appendChild(left); row.appendChild(mid); row.appendChild(right);
-      return row;
-    }
-
-    function formatTimestamp(thing) {
-      if (!thing) return "";
-      let d;
-      if (typeof thing === 'string') d = new Date(thing);
-      else if (thing && typeof thing.toDate === 'function') d = thing.toDate();
-      else if (thing instanceof Date) d = thing;
-      else d = new Date();
-      if (isNaN(d)) return "";
-      const month = d.getMonth() + 1;
-      const day = d.getDate();
-      const year = d.getFullYear();
-      let hour = d.getHours();
-      const minute = d.getMinutes().toString().padStart(2, '0');
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      hour = hour % 12;
-      if (hour === 0) hour = 12;
-      return `${month}/${day}/${year} ${hour}:${minute} ${ampm}`;
+      ed.appendChild(save);
+      const cancel = document.createElement('button');
+      cancel.className = 'icon-btn cancel-btn';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => {
+        parent.replaceChild(div, ed);
+      });
+      ed.appendChild(cancel);
+      parent.replaceChild(ed, div);
     }
 
     // color palette and deterministic hash
@@ -2143,85 +2079,44 @@
     });
 
     // Emoji picker setup
-    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🙂","😉","😊","😍","😎","🤔","🙏","👍","👀","🎉","🔥","💀","😭","😜","🤩","😇","🤖","🫶","😴","🤝","👏","🤷","🙌","💯","✨"];
+    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😜","😝","🫠","😎","🤓"];
     emojis.forEach(e => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'emoji-btn';
-      b.textContent = e;
-      b.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        insertEmojiAtCursor(messageInput, e);
+      const btn = document.createElement('button');
+      btn.className = 'emoji-btn';
+      btn.type = 'button';
+      btn.textContent = e;
+      btn.addEventListener('click', () => {
+        messageInput.value += e;
         emojiPicker.style.display = 'none';
         messageInput.focus();
       });
-      emojiGrid.appendChild(b);
+      emojiGrid.appendChild(btn);
     });
-
-    emojiBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
+    emojiBtn.addEventListener('click', () => {
       emojiPicker.style.display = (emojiPicker.style.display === 'block') ? 'none' : 'block';
     });
-    document.addEventListener('click', (e) => {
-      if (!emojiRow.contains(e.target)) emojiPicker.style.display = 'none';
+    document.addEventListener('click', (ev) => {
+      if (!emojiRow.contains(ev.target)) {
+        emojiPicker.style.display = 'none';
+      }
     });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') emojiPicker.style.display = 'none'; });
 
-    function insertEmojiAtCursor(textarea, emoji) {
-      const start = textarea.selectionStart || 0;
-      const end = textarea.selectionEnd || 0;
-      const val = textarea.value;
-      textarea.value = val.slice(0, start) + emoji + val.slice(end);
-      const pos = start + emoji.length;
-      textarea.selectionStart = textarea.selectionEnd = pos;
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
-    // How modal handlers
+    // How modal wiring
     howBtn.addEventListener('click', () => { howBackdrop.style.display = 'flex'; });
     howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
-    howBackdrop.addEventListener('click', e => { if (e.target === howBackdrop) howBackdrop.style.display = 'none'; });
+    howBackdrop.addEventListener('click', (ev) => { if (ev.target === howBackdrop) howBackdrop.style.display = 'none'; });
 
-    // init
-    (function init() {
-      clearBtn.style.display = 'none';
-      signOutBtn.style.display = 'none';
-      changePwBtn.style.display = 'none';
-      cpCurrent.style.display = '';
-      accountButtons.classList.add('fade-in');
-      splitTop.style.display = '';
-      splitBottom.style.display = '';
-
-      // START: ensure login overlay and account buttons are visible on initial load
-      loginOverlay.style.display = 'flex';
-      accountButtons.style.visibility = 'visible';
-      // END
-
-      requestAnimationFrame(() => {
-        loginCard.classList.add('scale-in');
-      });
-      updateClearButtonState();
-      // ensure admin panel starts hidden (in case CSS transitions toggle)
-      adminPanel.style.display = 'none';
-    })();
-
-    // --------------------- Server creation UI logic ---------------------
+    // Server modal wiring
     createServerMainBtn.addEventListener('click', async () => {
-      // show modal
-      serverBackdrop.style.display = 'flex';
-      serverNameInput.value = '';
+      // populate member list checkboxes (from accounts) each time
       membersList.innerHTML = '';
-
-      // load accounts to populate members list (live)
       try {
         const snap = await getDoc(accountsDocRef);
         const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-        const finalList = Array.isArray(list) ? list.slice() : [];
-        if (!finalList.includes(ADMIN_NAME)) finalList.unshift(ADMIN_NAME);
-        const seen = new Set();
-        for (const name of finalList) {
-          if (!name || seen.has(name)) continue;
-          seen.add(name);
+        const final = Array.isArray(list) ? list.slice() : [];
+        if (!final.includes(ADMIN_NAME)) final.unshift(ADMIN_NAME);
+        for (const name of final) {
+          if (!name) continue;
           const row = document.createElement('div');
           row.className = 'member-row';
           const cb = document.createElement('input');
@@ -2237,7 +2132,9 @@
       } catch (err) {
         membersList.textContent = 'Failed to load accounts';
       }
-      serverNameInput.addEventListener('input', checkServerFormValidity);
+      serverNameInput.value = '';
+      serverBackdrop.style.display = 'flex';
+      serverBackdrop.focus();
       checkServerFormValidity();
     });
 
@@ -2271,10 +2168,11 @@
       if (members.length === 0) return alert('Select at least one member.');
 
       try {
-        // write to meta/servers: map: { serverName: membersArray }
+        // write to meta/servers: allow both legacy array OR object with members & creator.
+        // We will store as object { members: [...], creator: currentUser || members[0] }
         const snap = await getDoc(serversDocRef);
         const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-        existing[name] = members;
+        existing[name] = { members, creator: (currentUser || (members[0] || null)) };
         await setDoc(serversDocRef, { map: existing }, { merge: true });
         serverBackdrop.style.display = 'none';
         // refresh options will run automatically because of servers onSnapshot listener
@@ -2299,8 +2197,8 @@
       // Add servers for which currentUser is member (or always show them but selection will hide messages if not a member)
       const serverNames = Object.keys(serversMap || {});
       for (const s of serverNames) {
-        // show server as option only if currentUser is member (or allow admins?) — user requested that members can select; so show server only when currentUser is member
-        const members = Array.isArray(serversMap[s]) ? serversMap[s] : [];
+        const sd = getServerData(s);
+        const members = sd.members;
         if (!currentUser || members.includes(currentUser)) {
           const opt = document.createElement('option');
           opt.value = s;
@@ -2310,8 +2208,6 @@
       }
 
       // Add accounts (exclude currentUser so you cannot DM yourself)
-      // We'll read accounts from accountsDocRef snapshot items in the nameSelect options if available,
-      // but safer to query accountsDocRef (but to avoid extra requests use the current DOM options in nameSelect).
       const accountValues = [];
       for (let i = 0; i < nameSelect.options.length; i++) {
         const v = nameSelect.options[i].value;
@@ -2330,6 +2226,69 @@
         opt.value = n;
         opt.textContent = n;
         chatWithSelect.appendChild(opt);
+      }
+    }
+
+    // --------------------- Servers panel population ---------------------
+    // Populate the servers panel for a given accountName (shows servers that account is a member of OR created)
+    async function populateServersFor(accountName) {
+      serversList.innerHTML = '';
+      if (!accountName) {
+        serversPanel.classList.remove('panel-open');
+        serversPanel.style.display = 'none';
+        serversPanel.setAttribute('aria-hidden', 'true');
+        return;
+      }
+      // Ensure visible
+      serversPanel.style.display = '';
+      serversPanel.classList.add('panel-open');
+      serversPanel.setAttribute('aria-hidden', 'false');
+
+      const names = Object.keys(serversMap || {});
+      if (!names.length) return;
+
+      // For each server, show if member or creator
+      for (const s of names) {
+        const sd = getServerData(s);
+        const members = sd.members || [];
+        const creator = sd.creator || null;
+        if (members.includes(accountName) || creator === accountName) {
+          const li = document.createElement('li');
+          const label = document.createElement('span');
+          label.textContent = s;
+          li.appendChild(label);
+
+          const right = document.createElement('div');
+          right.style.display = 'flex';
+          right.style.gap = '8px';
+          right.style.alignItems = 'center';
+
+          // Delete button: only show enabled when this account is the creator of the server
+          const del = document.createElement('button');
+          del.className = 'remove-account';
+          del.textContent = 'Delete';
+          if (creator === accountName) {
+            del.addEventListener('click', async () => {
+              if (!confirm(`Delete server "${s}" from cloud? This will remove the server for everyone.`)) return;
+              try {
+                const snap = await getDoc(serversDocRef);
+                const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+                if (existing[s]) delete existing[s];
+                await setDoc(serversDocRef, { map: existing }, { merge: true });
+              } catch (err) {
+                alert('Failed to delete server: ' + (err.message || err));
+              }
+            });
+          } else {
+            // Disabled appearance when not creator
+            del.disabled = true;
+            del.classList.add('disabled');
+          }
+          right.appendChild(del);
+
+          li.appendChild(right);
+          serversList.appendChild(li);
+        }
       }
     }
 
