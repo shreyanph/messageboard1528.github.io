@@ -12,7 +12,7 @@
       margin: 0;
       color: #ffffff;
       background-image: url("https://scx1.b-cdn.net/csz/news/800a/2023/data-science.jpg");
-      background-size: cover;
+      background-size: 115% auto;
       background-position: center;
       background-repeat: no-repeat;
       position: relative;
@@ -21,148 +21,451 @@
     /* main page inner (center column) */
     .page-inner {
       position: relative;
-      max-width: 900px;
-      margin: 40px auto 160px; /* room for fixed composer */
+      max-width: 640px;
+      margin: 40px auto 120px; /* bottom margin to make room for fixed composer */
       padding: 12px;
       box-sizing: border-box;
+      transition: opacity 420ms ease, transform 420ms ease;
     }
+    .page-inner.fade-out { opacity: 0; transform: scale(0.995); pointer-events: none; }
 
-    /* Top-left How To Use */
+    /* How To Use button (fixed left top) */
     #howBtn {
       position: fixed;
       top: 12px;
       left: 12px;
-      z-index: 15000;
+      z-index: 5000;
       background: rgba(255,165,0,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 10px;
+      border-radius: 6px;
+      pointer-events: auto;
+      color: #fff;
+    }
+
+    /* SIGN OUT button (top-right of screen) - red background */
+    #signOutBtn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 5001;
+      background: rgba(220,20,60,0.95);
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
       border-radius: 6px;
       color: #fff;
       cursor: pointer;
+      display: none;
+      transition: opacity 300ms ease;
     }
 
-    /* Admin manage button (next to How To Use) */
-    #manageBtn {
+    /* Change Password button (left of Sign Out) - BLUE */
+    #changePwBtn {
       position: fixed;
       top: 12px;
-      left: 120px;
-      z-index: 15000;
+      right: 96px;
+      z-index: 5001;
       background: rgba(30,144,255,0.95);
       border: 1px solid rgba(255,255,255,0.15);
       padding: 6px 10px;
       border-radius: 6px;
       color: #fff;
+      cursor: pointer;
       display: none;
+    }
+
+    h2 { margin-bottom: 10px; color: #ffffff; }
+
+    input, textarea, select {
+      width: 100%;
+      box-sizing: border-box;
+      color: #ffffff;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 8px;
+    }
+    textarea { height: 80px; resize: vertical; }
+
+    input.input-error {
+      border: 2px solid rgba(220,20,60,0.95) !important;
+      outline: none;
+      background: #fff;
+      color: #000;
+    }
+
+    button {
+      margin-top: 10px;
+      color: #ffffff;
+      background: rgba(0,0,0,0.65);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 8px 12px;
       cursor: pointer;
     }
 
-    /* Top-right sign out & change pw */
-    #signOutBtn { position: fixed; top:12px; right:12px; z-index:15000; background: rgba(220,20,60,0.95); padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); color:#fff; display:none; }
-    #changePwBtn { position: fixed; top:12px; right:96px; z-index:15000; background: rgba(30,144,255,0.95); padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); color:#fff; display:none; }
-
-    /* messages container */
+    /* messages container: vertical stack and scrollable */
     #messages {
       margin-top: 10px;
-      display:flex;
+      display: flex;
       flex-direction: column;
       gap: 10px;
       overflow: auto;
-      max-height: calc(100vh - 420px);
+      max-height: calc(100vh - 360px); /* leaves room for top UI + fixed composer */
       padding-bottom: 12px;
+    }
+
+    /* message row wrapper (message + actions) */
+    .message-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      position: relative;
+    }
+
+    /* message bubble (oval) */
+    .message {
+      border-radius: 999px;
+      padding: 14px 20px;
+      display: inline-block;
+      align-self: flex-start;
+      max-width: 100%;
+      color: #ffffff;
+      line-height: 1.25;
+      word-wrap: break-word;
+      box-sizing: border-box;
+    }
+    .message .name { font-weight: 700; margin-right: 8px; color: #ffffff; display:inline; }
+    .message .content { display:inline; color: #ffffff; }
+
+    /* actions shown to the right of message; appear on hover of row */
+    .actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-left: 6px;
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+    .message-row:hover .actions,
+    .message-row:focus-within .actions {
+      opacity: 1;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      font-size: 16px;
+      padding: 4px;
+    }
+    .icon-btn:hover { filter: brightness(1.15); }
+
+    .icon-btn.trash {
+      background: rgba(220,20,60,0.95);
+      color: #fff;
+    }
+    .icon-btn.pencil {
+      background: rgba(30,144,255,0.95);
+      color: #fff;
+    }
+
+    .icon-btn.reply-btn {
+      background: rgba(255,165,0,0.95);
+      color: #fff;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 120ms ease;
+    }
+    .message-row:hover .icon-btn.reply-btn,
+    .message-row:focus-within .icon-btn.reply-btn {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .divider {
+      border-bottom: 1px solid rgba(255,255,255,0.25);
+      margin: 8px 0;
+    }
+
+    #messages, input, textarea, select { backdrop-filter: blur(2px); }
+
+    .timestamp-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0;
+      color: #ffffff;
+      font-size: 0.9em;
+    }
+    .timestamp-row .line { flex: 1; height: 1px; background: rgba(255,255,255,0.18); }
+    .timestamp-row .timestamp-text {
+      white-space: nowrap;
+      padding: 0 6px;
+      color: #ffffff;
+      opacity: 0.95;
+      font-size: 0.95em;
+    }
+
+    #loginOverlay { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; z-index: 3000; background: rgba(0,0,0,0.55); }
+    .login-card { position: relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.12); padding: 26px 28px; border-radius: 12px; min-width: 320px; min-height: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); overflow: hidden; transform-origin: center center; opacity: 1; transform: scaleY(0); transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 420ms ease; }
+    .login-card.scale-in { transform: scaleY(1); }
+    .split-top, .split-bottom { position: absolute; left: 0; right: 0; background: rgba(0,0,0,0.76); z-index: 2500; transition: transform 3s cubic-bezier(.2,.9,.2,1); pointer-events: none; }
+    .split-top { top: 0; height: 50%; transform: translateY(0); }
+    .split-bottom { bottom: 0; height: 50%; transform: translateY(0); }
+    .login-card.split-open .split-top { transform: translateY(-120%); }
+    .login-card.split-open .split-bottom { transform: translateY(120%); }
+
+    .avatar { width: 112px; height: 112px; border-radius: 50%; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 48px; color: #fff; border: 2px solid rgba(255,255,255,0.06); }
+    .login-title { font-size: 18px; color: #fff; opacity: 0.95; }
+    .account-btn { width: 260px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-size: 16px; transition: opacity 300ms ease, transform 300ms ease; }
+    .account-btn:hover { background: rgba(255,255,255,0.06); }
+
+    /* Password area */
+    #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
+    #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
+
+    /* Admin panel & Servers panel */
+    #adminPanel, #serversPanel {
+      margin: 8px auto 16px auto;
+      z-index: 500;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 14px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 520px;
+      color: #fff;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transform-origin: top center;
+      transform: scaleY(0.98);
+      transition:
+        max-height 520ms cubic-bezier(.2,.9,.2,1),
+        opacity 420ms ease,
+        transform 420ms cubic-bezier(.2,.9,.2,1);
+      pointer-events: none;
+    }
+    #adminPanel.panel-open, #serversPanel.panel-open {
+      max-height: 520px;
+      opacity: 1;
+      transform: scaleY(1);
+      pointer-events: auto;
+    }
+
+    #accountsList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
+    #accountsList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
+
+    /* Servers list styling (same as accounts list) */
+    #serversList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
+    #serversList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
+
+    .remove-account {
+      background: rgba(220,20,60,0.95);
+      border: none;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius:6px;
+      cursor:pointer;
+    }
+    .remove-account.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: rgba(255,255,255,0.02);
+      color: #fff;
+    }
+
+    .change-account-pw {
+      background: rgba(30,144,255,0.95);
+      border: none;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 6px;
+    }
+
+    #addAccountBtn {
+      background: rgba(0,180,0,0.95);
+      border: none;
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #clearBtn {
+      background: rgba(220,20,60,0.95);
+      border: none;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .emoji-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .emoji-row textarea { width: auto; flex: 1 1 auto; min-height: 44px; }
+    #emojiBtn {
+      min-width: 44px;
+      height: 44px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .emoji-picker {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: rgba(0,0,0,0.95);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 8px;
+      border-radius: 8px;
+      z-index: 200;
+      width: max-content;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      display: none;
+    }
+    .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+    .emoji-btn { background: transparent; border: none; font-size: 20px; padding: 6px; cursor: pointer; border-radius: 6px; color: #fff; }
+    .emoji-btn:hover { background: rgba(255,255,255,0.06); }
+
+    .edit-area {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      width:100%;
+      box-sizing:border-box;
+    }
+    .edit-area textarea {
+      height: 88px;
+      min-width: 260px;
+      max-width: 420px;
+      resize: vertical;
+      color:#000;
+      background:#fff;
+      border-radius:8px;
+      padding:8px;
       box-sizing: border-box;
     }
 
-    .message-row { display:flex; align-items:flex-start; gap:8px; position:relative; }
-    .message { border-radius:999px; padding: 14px 20px; display:inline-block; max-width:100%; line-height:1.25; box-sizing:border-box; color:#fff; background: rgba(0,0,0,0.45); }
-    .message .name { font-weight:700; margin-right:8px; }
-
-    .actions { display:flex; gap:6px; align-items:center; margin-left:6px; opacity:0; transition:opacity 120ms ease; }
-    .message-row:hover .actions, .message-row:focus-within .actions { opacity:1; }
-
-    .icon-btn { width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; border:none; cursor:pointer; background: rgba(255,255,255,0.06); color:#fff; font-size:16px; padding:4px; }
-    .icon-btn.trash { background: rgba(220,20,60,0.95); }
-    .icon-btn.pencil { background: rgba(30,144,255,0.95); }
-    .icon-btn.reply-btn { background: rgba(255,165,0,0.95); color:#fff; font-weight:700; font-size:18px; opacity:0; pointer-events:none; transition:opacity 120ms ease; }
-    .message-row:hover .icon-btn.reply-btn, .message-row:focus-within .icon-btn.reply-btn { opacity:1; pointer-events:auto; }
-
-    .timestamp-row { display:flex; align-items:center; gap:10px; margin:8px 0; font-size:0.9em; color:#fff; }
-    .timestamp-row .line { flex:1; height:1px; background: rgba(255,255,255,0.18); }
-    .timestamp-row .timestamp-text { padding:0 6px; white-space:nowrap; }
-
-    /* Lock-screen overlay (login) - must be on top */
-    #loginOverlay {
-      position: fixed;
-      left: 0; top: 0;
-      width: 100vw; height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-      z-index: 20000; /* highest */
-      background: rgba(0,0,0,0.65);
+    .edit-area .icon-btn {
+      background: #000;
+      color: #fff;
+      width: auto;
+      padding: 8px 12px;
+      height: auto;
+      border-radius: 8px;
+      font-size: 14px;
     }
-    .login-card {
-      position: relative;
-      display:flex; flex-direction:column; align-items:center; gap:18px;
-      background: rgba(0,0,0,0.85);
-      border:1px solid rgba(255,255,255,0.12);
-      padding: 26px 28px; border-radius:12px;
-      min-width:320px; min-height:460px; box-shadow: 0 20px 60px rgba(0,0,0,0.7);
-      transform-origin:center center; transform: scaleY(1);
-    }
-    .split-top, .split-bottom { position:absolute; left:0; right:0; background: rgba(0,0,0,0.76); z-index:2500; pointer-events:none; }
-    .split-top { top:0; height:50%; } .split-bottom { bottom:0; height:50%; }
+    .edit-area .icon-btn:hover { filter: brightness(1.12); }
+    .edit-area .cancel-btn { margin-left: auto; }
 
-    .avatar { width:112px; height:112px; border-radius:50%; background: rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:48px; color:#fff; border:2px solid rgba(255,255,255,0.06); }
-    .login-title { font-size:18px; color:#fff; }
-    .account-btn { width:260px; display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:10px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); color:#fff; cursor:pointer; font-size:16px; }
+    .pw-backdrop { display: none; position: fixed; inset: 0; z-index: 6000; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+    .pw-modal { background: rgba(0,0,0,0.9); border: 1px solid rgba(255,255,255,0.12); padding: 12px; border-radius: 10px; color: #fff; width: 320px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:8px; }
+    .pw-modal input { width:100%; padding:8px; box-sizing:border-box; color:#000; background:#fff; border-radius:6px; border: none; }
+    .pw-error { color: rgba(255,200,200,1); font-size: 0.9em; display: none; margin-bottom: 4px; }
 
-    #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
-    input[type="password"] { padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.25); background:#fff; color:#000; }
+    .how-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+    .how-modal { max-width: 560px; width: 100%; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.12); padding: 16px; border-radius: 8px; color: #fff; box-shadow: 0 6px 30px rgba(0,0,0,0.6); position: relative; }
+    .how-modal h3 { margin-top:0; }
+    .how-modal .close { position: absolute; right: 8px; top: 8px; background: transparent; border: none; color: #fff; font-size: 18px; cursor: pointer; padding: 4px; }
 
-    /* Management modal */
-    .manage-backdrop { display:none; position: fixed; inset:0; z-index:18000; background: rgba(0,0,0,0.6); align-items:center; justify-content:center; }
-    .manage-modal { width: min(920px, calc(100% - 40px)); max-height: 84vh; overflow:auto; background: rgba(0,0,0,0.95); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:16px; color:#fff; display:flex; gap:16px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+    #bootOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 4000; pointer-events: none; background: transparent; }
+    #bootBox { display: flex; flex-direction: column; align-items: center; gap: 18px; background: transparent; border-radius: 999px; padding: 0; transition: opacity 420ms ease, transform 420ms ease; opacity: 0; transform: scale(0.98); }
+    #bootBox.show { opacity: 1; transform: scale(1); }
+    #bootLogoWrap { width: 320px; height: 320px; border-radius: 50%; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.04); }
+    #bootLogo { width: 300px; height: 300px; object-fit: contain; display:block; border-radius: 12px; }
+    .boot-spinner { width: 96px; height: 96px; border-radius: 50%; border: 10px solid rgba(255,255,255,0.12); border-top-color: rgba(255,255,255,0.95); animation: spin 1s linear infinite; box-sizing: border-box; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .panel { background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.12); padding:12px; border-radius:8px; color:#fff; margin-bottom:12px; }
-    #accountsList, #serversList { list-style:none; padding:0; margin:6px 0; max-height:320px; overflow:auto; }
-    #accountsList li, #serversList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
+    .hidden { display: none !important; }
 
-    .remove-account { background: rgba(220,20,60,0.95); border:none; color:#fff; padding:6px 10px; border-radius:6px; cursor:pointer; }
-    .remove-account.disabled { opacity:0.45; cursor:not-allowed; background: rgba(255,255,255,0.02); }
+    .replies-wrapper { margin-left: 48px; margin-top: 8px; border-left: 2px solid rgba(255,165,0,0.9); padding-left: 12px; position: relative; display: flex; flex-direction: column; gap: 8px; }
+    .replies-wrapper::before { content: ''; position: absolute; left: -12px; top: -10px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 12px solid rgba(255,165,0,0.95); }
+    .reply { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 8px 10px; color: #fff; font-size: 0.95em; word-wrap: break-word; }
+    .reply .r-name { font-weight:700; margin-right:8px; color:#fff; }
 
-    .change-account-pw { background: rgba(30,144,255,0.95); border: none; color: #fff; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size:14px; line-height:1.2; }
+    .reply-indicator { display: none; align-items: center; gap: 8px; color: #fff; padding: 6px 10px; border-radius: 8px; background: rgba(255,165,0,0.95); color: #ffffff; border: 1px solid rgba(255,165,0,0.95); margin: 8px 0; font-size: 0.95em; }
+    .reply-indicator .cancel-reply { background: rgba(220,20,60,0.95); border: none; color: #fff; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
 
-    /* Composer fixed at bottom (hidden on lock screen) */
+    #sendBtn { background: rgba(0,180,0,0.95); border: none; color: #fff; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+    #deleteCurrentBtn { background: rgba(220,20,60,0.95); border: none; color: #fff; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-left: 8px; margin-top: 10px; }
+
+    .from-row, .chat-with-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .from-row label, .chat-with-row label { white-space: nowrap; font-weight: 600; color: #fff; }
+    .from-row select, .chat-with-row select { min-width: 220px; }
+
+    /* Server modal */
+    .server-backdrop { display: none; position: fixed; inset: 0; z-index: 7000; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+    .server-modal { width: 420px; background: rgba(0,0,0,0.95); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 14px; color: #fff; box-shadow: 0 8px 40px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:12px; }
+    .server-modal .members-list { max-height: 220px; overflow:auto; border: 1px solid rgba(255,255,255,0.06); padding:8px; border-radius:6px; }
+    .server-modal .member-row { display:flex; align-items:center; gap:8px; padding:6px 4px; }
+
+    .create-server-btn { background: rgba(0,0,0,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px; cursor: not-allowed; }
+    .create-server-btn.enabled { background: rgba(0,180,0,0.95); cursor: pointer; }
+
+    /* Composer fixed at bottom of viewport */
     .composer {
-      position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
-      z-index: 17000; width: min(640px, calc(100% - 32px));
-      background: rgba(0,0,0,0.85); border:1px solid rgba(255,255,255,0.12); padding:10px; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,0.6);
-      display: none; flex-direction:column; gap:8px;
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 6000;
+      width: min(640px, calc(100% - 32px));
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    .composer-row { display:flex; gap:8px; align-items:center; }
-    .emoji-grid { display:grid; grid-template-columns: repeat(8,1fr); gap:6px; }
-
-    /* Side panels (DM and Servers) */
-    .side-panel {
-      position: fixed; top: 56px; width: 220px;
-      z-index: 16000; background: rgba(0,0,0,0.85); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:10px; box-shadow:0 8px 30px rgba(0,0,0,0.5);
-      display: none; max-height: calc(100vh - 100px); overflow:auto;
+    .composer-row {
+      display:flex;
+      gap:8px;
+      align-items:center;
     }
-    .side-panel.open { display:block; }
-    #dmPanel { left:12px; } #serverSelectPanel { right:12px; }
-    .side-panel h4 { margin:0 0 8px 0; color:#fff; }
-    .side-panel ul { list-style:none; padding:0; margin:0; }
-    .side-panel li { display:flex; align-items:center; justify-content:space-between; padding:6px; border-radius:8px; margin-bottom:6px; cursor:pointer; color:#fff; }
-    .side-panel li.selected { background: rgba(255,255,255,0.04); }
+    .composer .emoji-row textarea { min-height: 52px; color: #fff; background: rgba(0,0,0,0.45); border-radius:8px; padding:8px; }
+    .composer .controls { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+    .composer .controls button { margin: 0; }
 
-    @media (max-width:900px) {
-      .side-panel { width: 180px; }
-      .manage-modal { flex-direction: column; }
-      .page-inner { margin: 20px 12px 160px; }
-      .composer { width: calc(100% - 24px); }
+    @media (max-width: 640px) {
+      .page-inner { margin: 20px 12px 160px; max-width: 100%; }
+      .login-card { min-width: 260px; padding: 18px; min-height: 360px; }
+      .account-btn { width: 220px; }
+      #adminPanel { width: calc(100% - 32px); }
+      .emoji-grid { grid-template-columns: repeat(6, 1fr); }
+      #bootLogoWrap { width: 240px; height: 240px; }
+      #bootLogo { width: 220px; height: 220px; }
+      .boot-spinner { width: 72px; height: 72px; border-width: 8px; }
+      .replies-wrapper { margin-left: 32px; padding-left: 10px; }
+      .from-row select, .chat-with-row select { min-width: 140px; }
+      .server-modal { width: 92%; }
+      .composer { left: 50%; transform: translateX(-50%); width: calc(100% - 24px); bottom: 12px; }
+      #messages { max-height: calc(100vh - 340px); }
     }
   </style>
 </head>
 <body>
-  <!-- Lock/Sign-in overlay -->
+  <!-- LOGIN OVERLAY -->
   <div id="loginOverlay" role="dialog" aria-modal="true" aria-label="Login">
     <div class="login-card" role="presentation">
       <div class="split-top" aria-hidden="true"></div>
@@ -175,7 +478,8 @@
 
       <div id="passwordArea" aria-hidden="true">
         <div id="pwPromptText" style="margin-bottom:4px; color:rgba(255,255,255,0.9); font-size:0.95em;"></div>
-        <div id="pwErr" style="display:none;color:rgba(255,200,200,1);font-size:0.9em;margin-bottom:4px;"></div>
+
+        <div id="pwErr" class="pw-error" aria-live="polite"></div>
 
         <div id="enterPw" style="display:none; gap:8px; flex-direction:column;">
           <input id="passwordInput" type="password" placeholder="Password" autocomplete="new-password" />
@@ -201,98 +505,139 @@
     </div>
   </div>
 
-  <!-- Administration modal (Account & Server Management) -->
-  <div id="manageBackdrop" class="manage-backdrop" role="dialog" aria-modal="true" style="display:none;">
-    <div class="manage-modal" role="document" aria-label="Account and Server Management">
-      <div style="display:flex; justify-content:flex-end; width:100%; position:relative; margin-bottom:-8px;">
-        <button id="closeManage" style="position:absolute; right:8px; top:-8px; background:transparent; border:none; color:#fff; font-size:22px; cursor:pointer;">&times;</button>
+  <!-- BOOT overlay (logo + spinner) -->
+  <div id="bootOverlay" aria-hidden="true">
+    <div id="bootBox" role="presentation" aria-hidden="true">
+      <div id="bootLogoWrap" aria-hidden="true">
+        <img id="bootLogo" src="Message%20Board.png" alt="Message Board Logo" />
       </div>
-      <div style="flex:1; min-width:320px;">
-        <div id="adminPanel" class="panel">
-          <h4>Accounts (cloud)</h4>
-          <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input id="newAccountInput" placeholder="New account name" style="flex:1; padding:6px;" />
-            <button id="addAccountBtn" style="padding:6px 8px;">Add</button>
-          </div>
-          <ul id="accountsList" aria-live="polite"></ul>
-        </div>
-      </div>
-      <div style="flex:1; min-width:320px;">
-        <div id="serversPanel" class="panel">
-          <h4>Servers (cloud)</h4>
-          <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input id="newServerInput" placeholder="New server name" style="flex:1; padding:6px;" />
-            <button id="addServerBtn" style="padding:6px 8px;">Add</button>
-          </div>
-          <ul id="serversList" aria-live="polite"></ul>
-        </div>
-      </div>
+      <div class="boot-spinner" role="status" aria-label="Loading"></div>
     </div>
-  </div>
-
-  <!-- Left DM panel and Right Server selection panel (hidden until login) -->
-  <div id="dmPanel" class="side-panel" aria-hidden="true">
-    <h4>Direct Messages</h4>
-    <ul id="dmList"></ul>
-  </div>
-
-  <div id="serverSelectPanel" class="side-panel" aria-hidden="true">
-    <h4>Servers</h4>
-    <ul id="serverSelectList"></ul>
   </div>
 
   <div class="page-inner">
+    <!-- How To Use button -->
     <button id="howBtn">How To Use</button>
-    <button id="manageBtn">Account &amp; Server Management</button>
 
-    <div style="margin-top: 60px;">
-      <div id="messages" aria-live="polite"></div>
+    <!-- Admin panel (centered) -->
+    <div id="adminPanel" aria-hidden="true">
+      <h4>Accounts (cloud)</h4>
+      <div style="display:flex; gap:8px;">
+        <input id="newAccountInput" placeholder="New account name" style="flex:1; padding:6px;" />
+        <button id="addAccountBtn" style="padding:6px 8px;">Add</button>
+      </div>
+      <ul id="accountsList" aria-live="polite"></ul>
     </div>
+
+    <!-- Servers panel (identical layout & style to accounts panel) -->
+    <div id="serversPanel" aria-hidden="true" style="display:none;">
+      <h4>Servers (cloud)</h4>
+      <!-- ADMIN: add server input (only visible to admin in JS) -->
+      <div id="newServerRow" style="display:none; gap:8px; margin-bottom:8px;">
+        <input id="newServerInput" placeholder="New server name" style="flex:1; padding:6px;" />
+        <button id="addServerBtn" style="padding:6px 8px;">Add</button>
+      </div>
+
+      <!-- servers list -->
+      <ul id="serversList" aria-live="polite"></ul>
+    </div>
+
+    <!-- Chatting With dropdown (all accounts + Main Server default + servers) -->
+    <div class="chat-with-row">
+      <label for="chatWithSelect">Chatting With:</label>
+      <select id="chatWithSelect" required>
+        <option value="Main Server" selected>Main Server</option>
+      </select>
+    </div>
+
+    <br>
+
+    <!-- Message history -->
+    <div id="messages" aria-live="polite"></div>
 
     <br>
     <button id="clearBtn" title="Only Administrator may clear history">Clear Message History</button>
   </div>
 
-  <!-- Composer fixed bottom (hidden until login) -->
-  <div class="composer" id="composer" role="region" aria-label="Message composer">
-    <div id="replyIndicator" class="reply-indicator" aria-hidden="true" style="display:none;">
+  <!-- Sign Out button (top-right) -->
+  <button id="signOutBtn" title="Sign out">Sign Out</button>
+  <!-- Change Password button (left of Sign Out) - blue -->
+  <button id="changePwBtn" title="Change your password">Change Password</button>
+
+  <!-- Change password modal -->
+  <div id="pwBackdrop" class="pw-backdrop" role="dialog" aria-modal="true" style="display:none; align-items:center; justify-content:center;">
+    <div class="pw-modal" role="document">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">Change Password</strong>
+        <button id="closePwModal" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>
+      </div>
+      <div id="pwMsg" style="font-size:0.9em;color:rgba(255,255,255,0.85);">Enter your current password and a new password.</div>
+      <input id="cpCurrent" type="password" placeholder="Current password (leave blank if none stored)" />
+      <input id="cpNew" type="password" placeholder="New password" />
+      <input id="cpNewRetype" type="password" placeholder="Retype new password" />
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button id="cpSaveBtn">Save</button>
+        <button id="cpCancelBtn" style="background:rgba(255,255,255,0.06);">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Server create/edit modal (kept available but not required for admin add) -->
+  <div id="serverBackdrop" class="server-backdrop" role="dialog" aria-modal="true">
+    <div class="server-modal" role="document">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">Create Server</strong>
+        <button id="closeServerModal" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>
+      </div>
+      <div>
+        <label for="serverNameInput" style="font-weight:600;">Server name</label>
+        <input id="serverNameInput" placeholder="e.g. Project X" />
+      </div>
+      <div>
+        <label style="font-weight:600;">Include members</label>
+        <div class="members-list" id="membersList"></div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button id="createServerBtn" class="create-server-btn" disabled>Create Server</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- How To Use modal -->
+  <div id="howBackdrop" class="how-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="how-modal" role="document">
+      <button class="close" id="howClose" aria-label="Close">&times;</button>
+      <h3>How To Use</h3>
+      <ol>
+        <li><u>Administrator</u> creates accounts (Admin panel) and manages them in the cloud.</li>
+        <li>Users sign in from the lock screen. If a password doesn't exist, they are prompted to create one.</li>
+        <li>Messages are sent as the currently logged-in account; there is no "From" selection anymore.</li>
+      </ol>
+      <p>Thanks for using Message Board!</p>
+    </div>
+  </div>
+
+  <!-- Composer: fixed bottom -->
+  <div class="composer" role="region" aria-label="Message composer">
+    <div id="replyIndicator" class="reply-indicator" aria-hidden="true">
       <div id="replyIndicatorText"></div>
-      <button id="cancelReplyBtn" class="cancel-reply" style="background:rgba(220,20,60,0.95); border:none; color:#fff; padding:6px 8px; border-radius:6px;">Cancel</button>
+      <button id="cancelReplyBtn" class="cancel-reply">Cancel</button>
     </div>
 
     <div class="composer-row">
       <div class="emoji-row" id="emojiRow" style="position:relative; flex:1;">
         <textarea id="messageInput" placeholder="Type a message..."></textarea>
         <button id="emojiBtn" type="button" title="Insert emoji">😊</button>
-        <div id="emojiPicker" class="emoji-picker" aria-hidden="true" style="display:none; position:absolute; top: calc(100% + 8px); right:0;">
+        <div id="emojiPicker" class="emoji-picker" aria-hidden="true">
           <div class="emoji-grid" id="emojiGrid"></div>
         </div>
       </div>
     </div>
 
-    <div class="composer-row" style="justify-content:flex-end;">
-      <div style="display:flex; gap:8px;">
+    <div class="composer-row controls">
+      <div style="margin-left:auto; display:flex; gap:8px;">
         <button id="sendBtn">Send</button>
         <button id="deleteCurrentBtn" title="Clear current message">Delete Current Message</button>
-      </div>
-    </div>
-  </div>
-
-  <button id="signOutBtn" title="Sign out">Sign Out</button>
-  <button id="changePwBtn" title="Change your password">Change Password</button>
-
-  <div id="howBackdrop" class="manage-backdrop" style="display:none;">
-    <div class="manage-modal" style="width:600px; max-height:70vh; overflow:auto;">
-      <div style="display:flex; justify-content:flex-end; width:100%;">
-        <button id="howClose" style="background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;">&times;</button>
-      </div>
-      <div style="padding:8px;">
-        <h3>How To Use</h3>
-        <ol>
-          <li><u>Administrator</u> creates accounts and servers from Account &amp; Server Management.</li>
-          <li>Sign in by selecting an account from the lock screen. If password missing you'll be prompted to create one.</li>
-          <li>Messages are always sent as the signed-in account. Select a user or server from the side panels to chat with them.</li>
-        </ol>
       </div>
     </div>
   </div>
@@ -328,10 +673,24 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // DOM refs
+    // DOM refs (removed 'From' select as requested)
+    const chatWithSelect = document.getElementById('chatWithSelect');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const deleteCurrentBtn = document.getElementById('deleteCurrentBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const messagesDiv = document.getElementById('messages');
+
     const loginOverlay = document.getElementById('loginOverlay');
+    const loginCard = document.querySelector('.login-card');
     const accountButtons = document.getElementById('accountButtons');
+    const pageInner = document.querySelector('.page-inner');
+    const adminPanel = document.getElementById('adminPanel');
+    const newAccountInput = document.getElementById('newAccountInput');
+    const addAccountBtn = document.getElementById('addAccountBtn');
+    const accountsList = document.getElementById('accountsList');
     const avatarCircle = document.getElementById('avatarCircle');
+
     const passwordArea = document.getElementById('passwordArea');
     const pwPromptText = document.getElementById('pwPromptText');
     const enterPw = document.getElementById('enterPw');
@@ -346,70 +705,78 @@
     const loginHint = document.getElementById('loginHint');
     const pwErr = document.getElementById('pwErr');
 
+    const splitTop = document.querySelector('.split-top');
+    const splitBottom = document.querySelector('.split-bottom');
+
+    const bootOverlay = document.getElementById('bootOverlay');
+    const bootBox = document.getElementById('bootBox');
+    const bootLogo = document.getElementById('bootLogo');
+
+    const emojiBtn = document.getElementById('emojiBtn');
+    const emojiPicker = document.getElementById('emojiPicker');
+    const emojiGrid = document.getElementById('emojiGrid');
+    const emojiRow = document.getElementById('emojiRow');
+
     const howBtn = document.getElementById('howBtn');
     const howBackdrop = document.getElementById('howBackdrop');
     const howClose = document.getElementById('howClose');
 
-    const manageBtn = document.getElementById('manageBtn');
-    const manageBackdrop = document.getElementById('manageBackdrop');
-    const closeManage = document.getElementById('closeManage');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const changePwBtn = document.getElementById('changePwBtn');
 
-    const accountsList = document.getElementById('accountsList');
-    const addAccountBtn = document.getElementById('addAccountBtn');
-    const newAccountInput = document.getElementById('newAccountInput');
+    const pwBackdrop = document.getElementById('pwBackdrop');
+    const cpCurrent = document.getElementById('cpCurrent');
+    const cpNew = document.getElementById('cpNew');
+    const cpNewRetype = document.getElementById('cpNewRetype');
+    const cpSaveBtn = document.getElementById('cpSaveBtn');
+    const cpCancelBtn = document.getElementById('cpCancelBtn');
+    const closePwModal = document.getElementById('closePwModal');
+    const pwMsg = document.getElementById('pwMsg');
 
-    const serversList = document.getElementById('serversList');
-    const addServerBtn = document.getElementById('addServerBtn');
-    const newServerInput = document.getElementById('newServerInput');
-
-    const dmPanel = document.getElementById('dmPanel');
-    const dmList = document.getElementById('dmList');
-    const serverSelectPanel = document.getElementById('serverSelectPanel');
-    const serverSelectList = document.getElementById('serverSelectList');
-
-    const messagesDiv = document.getElementById('messages');
-    const composer = document.getElementById('composer');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const deleteCurrentBtn = document.getElementById('deleteCurrentBtn');
-    const emojiBtn = document.getElementById('emojiBtn');
-    const emojiPicker = document.getElementById('emojiPicker');
-    const emojiGrid = document.getElementById('emojiGrid');
     const replyIndicator = document.getElementById('replyIndicator');
     const replyIndicatorText = document.getElementById('replyIndicatorText');
     const cancelReplyBtn = document.getElementById('cancelReplyBtn');
 
-    const signOutBtn = document.getElementById('signOutBtn');
-    const changePwBtn = document.getElementById('changePwBtn');
-    const clearBtn = document.getElementById('clearBtn');
+    const serverBackdrop = document.getElementById('serverBackdrop');
+    const closeServerModal = document.getElementById('closeServerModal');
+    const serverNameInput = document.getElementById('serverNameInput');
+    const membersList = document.getElementById('membersList');
+    const createServerBtn = document.getElementById('createServerBtn');
 
-    // firebase refs
+    // Servers panel refs & admin add UI
+    const serversPanel = document.getElementById('serversPanel');
+    const serversList = document.getElementById('serversList');
+    const newServerRow = document.getElementById('newServerRow');
+    const newServerInput = document.getElementById('newServerInput');
+    const addServerBtn = document.getElementById('addServerBtn');
+
+    // hide page until login
+    pageInner.style.display = 'none';
+
+    // cloud refs
     const accountsDocRef = doc(db, 'meta', 'accounts');
     const passwordsDocRef = doc(db, 'meta', 'passwords');
     const serversDocRef = doc(db, 'meta', 'servers');
     const ADMIN_NAME = 'Administrator';
 
-    // state
-    let currentUser = null;
-    let passwordFlow = { active:false, account:null, mode:null };
+    // caches & state
     let lastMessages = [];
-    let accountsCache = [];
-    let serversMap = {};
+    let pwChangeTarget = null;
     let replyTargetId = null;
     let replyTargetName = null;
-    let chatTarget = { type:'main', name:null };
+    let serversMap = {};
+    let accountsCache = []; // list of account names
 
-    // helper: hashing
+    // helper: SHA-256
     async function hashPassword(password) {
       const enc = new TextEncoder();
       const data = enc.encode(password);
       const hashBuffer = await crypto.subtle.digest('SHA-256', data);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // ensure admin present
-    (async function ensureAdminPresent(){
+    (async function ensureAdminPresent() {
       try {
         const snap = await getDoc(accountsDocRef);
         if (!snap.exists()) {
@@ -422,551 +789,549 @@
             await setDoc(accountsDocRef, { list: updated }, { merge: true });
           }
         }
-      } catch(e) {
-        console.warn('ensureAdminPresent failed:', e?.message || e);
+      } catch (err) {
+        console.warn("Could not ensure Administrator present:", err?.message);
       }
     })();
 
-    // realtime listeners
+    // realtime accounts listener -> populates login overlay and admin panel & chatWithSelect
     onSnapshot(accountsDocRef, snap => {
       const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-      populateAccountButtons(list);
+      populateAccounts(list);
+    }, err => {
+      console.error('Accounts listener error:', err);
+      populateAccounts([]);
+    });
+
+    // listen for servers changes
+    onSnapshot(serversDocRef, snap => {
+      const data = snap.exists() ? (snap.data().map || {}) : {};
+      serversMap = Object.assign({}, data);
+      refreshChatWithOptions();
+      populateServersFor(currentUser);
+    }, err => {
+      console.warn('Servers listener error:', err);
+      serversMap = {};
+      refreshChatWithOptions();
+      populateServersFor(currentUser);
+    });
+
+    function populateAccounts(list) {
+      accountButtons.innerHTML = "";
+      const safeList = Array.isArray(list) ? list.slice() : [];
+      if (safeList.length === 0) {
+        appendAccountButton(ADMIN_NAME);
+      } else {
+        if (!safeList.includes(ADMIN_NAME)) safeList.unshift(ADMIN_NAME);
+        const seen = new Set(), unique = [];
+        for (const n of safeList) {
+          if (!seen.has(n)) { seen.add(n); unique.push(n); }
+        }
+        unique.forEach(name => appendAccountButton(name));
+      }
+
       accountsCache = Array.isArray(list) ? list.slice() : [];
       if (!accountsCache.includes(ADMIN_NAME)) accountsCache.unshift(ADMIN_NAME);
-      renderDMList();
-      populateManageAccounts(list);
-    }, err => {
-      console.error('accounts listener', err);
-      populateAccountButtons([]);
-      accountsCache = [];
-      renderDMList();
-      populateManageAccounts([]);
-    });
 
-    onSnapshot(serversDocRef, snap => {
-      const map = snap.exists() ? (snap.data().map || {}) : {};
-      serversMap = Object.assign({}, map);
-      renderServerSelectionList();
-      populateManageServers(serversMap);
-    }, err => {
-      console.warn('servers listener', err);
-      serversMap = {};
-      renderServerSelectionList();
-      populateManageServers({});
-    });
+      // admin panel list
+      accountsList.innerHTML = "";
+      if (Array.isArray(list)) {
+        const ordered = list.includes(ADMIN_NAME) ? [ADMIN_NAME, ...list.filter(n => n !== ADMIN_NAME)] : list;
+        ordered.forEach(name => {
+          const li = document.createElement('li');
+          const label = document.createElement('span');
+          label.textContent = name;
 
-    const messagesCol = collection(db, 'messages');
-    const messagesQuery = query(messagesCol, orderBy('time','asc'));
-    onSnapshot(messagesQuery, snapshot => {
-      const msgs = [];
-      snapshot.forEach(d => {
-        const data = d.data();
-        msgs.push({
-          id: d.id,
-          name: data.name,
-          text: data.text || '',
-          time: data.time || null,
-          parentId: data.parentId || null,
-          dmTarget: data.dmTarget || null
+          const actionsRight = document.createElement('div');
+          actionsRight.style.display = 'flex';
+          actionsRight.style.gap = '8px';
+          actionsRight.style.alignItems = 'center';
+
+          if (name === ADMIN_NAME) {
+            const rm = document.createElement('button');
+            rm.className = 'remove-account disabled';
+            rm.textContent = 'Remove';
+            rm.disabled = true;
+            actionsRight.appendChild(rm);
+          } else {
+            const changeBtn = document.createElement('button');
+            changeBtn.className = 'change-account-pw';
+            changeBtn.textContent = 'Change Password';
+            changeBtn.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              if (currentUser !== ADMIN_NAME) {
+                alert('Only Administrator may change other account passwords.');
+                return;
+              }
+              pwChangeTarget = name;
+              cpCurrent.value = '';
+              cpNew.value = '';
+              cpNewRetype.value = '';
+              cpCurrent.style.display = 'none';
+              pwMsg.textContent = `Set a new password for ${name}.`;
+              pwBackdrop.style.display = 'flex';
+            });
+            actionsRight.appendChild(changeBtn);
+
+            const rm = document.createElement('button');
+            rm.className = 'remove-account';
+            rm.textContent = 'Remove';
+            rm.addEventListener('click', async () => {
+              if (!confirm(`Remove account "${name}" from cloud? This will remove it for everyone.`)) return;
+              try {
+                const snap = await getDoc(accountsDocRef);
+                const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+                const filtered = existing.filter(n => n !== name && n !== undefined && n !== null);
+                if (!filtered.includes(ADMIN_NAME)) filtered.unshift(ADMIN_NAME);
+                await setDoc(accountsDocRef, { list: filtered }, { merge: true });
+                try {
+                  const pwSnap = await getDoc(passwordsDocRef);
+                  if (pwSnap.exists()) {
+                    const map = pwSnap.data().map || {};
+                    if (map[name]) {
+                      delete map[name];
+                      await setDoc(passwordsDocRef, { map }, { merge: true });
+                    }
+                  }
+                } catch (e) { console.warn('Could not remove password entry:', e?.message); }
+              } catch (err) {
+                alert('Failed to remove account: ' + err.message);
+              }
+            });
+            actionsRight.appendChild(rm);
+          }
+
+          li.appendChild(label);
+          li.appendChild(actionsRight);
+          accountsList.appendChild(li);
         });
-      });
-      lastMessages = msgs;
-      renderMessages();
-    }, err => {
-      console.error('messages listener', err);
-    });
+      }
 
-    /********** Account button/login population **********/
-    function populateAccountButtons(list) {
-      accountButtons.innerHTML = '';
-      const safe = Array.isArray(list) ? list.slice() : [];
-      if (safe.length === 0) safe.push(ADMIN_NAME);
-      if (!safe.includes(ADMIN_NAME)) safe.unshift(ADMIN_NAME);
+      refreshChatWithOptions();
+      updateClearButtonState();
 
-      const seen = new Set();
-      for (const name of safe) {
-        if (!name || seen.has(name)) continue;
-        seen.add(name);
-        const b = document.createElement('button');
-        b.className = 'account-btn';
-        b.textContent = name;
-        b.addEventListener('mouseenter', ()=>{ if(!passwordFlow.active) avatarCircle.textContent = name.charAt(0).toUpperCase();});
-        b.addEventListener('mouseleave', ()=>{ if(!passwordFlow.active) avatarCircle.textContent = '';});
-        b.addEventListener('click', ()=> startPasswordFlowFor(name));
-        accountButtons.appendChild(b);
+      if (loginOverlay.style.display !== 'none' && accountButtons.style.visibility !== 'hidden') {
+        splitTop.style.display = '';
+        splitBottom.style.display = '';
+        void loginCard.offsetWidth;
+        loginCard.classList.add('split-open');
+        loginCard.classList.add('scale-in');
+        setTimeout(() => {
+          splitTop.style.display = 'none';
+          splitBottom.style.display = 'none';
+          loginCard.classList.remove('split-open');
+        }, 3000);
       }
     }
 
+    function appendAccountButton(name) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'account-btn';
+      b.textContent = name;
+
+      b.addEventListener('mouseenter', () => {
+        if (!passwordFlow.active) {
+          const ch = (name && typeof name === 'string') ? name.trim().charAt(0).toUpperCase() : '';
+          avatarCircle.textContent = ch;
+        }
+      });
+      b.addEventListener('mouseleave', () => {
+        if (!passwordFlow.active) avatarCircle.textContent = '';
+      });
+
+      b.addEventListener('click', () => startPasswordFlowFor(name));
+      accountButtons.appendChild(b);
+    }
+
+    addAccountBtn.addEventListener('click', async () => {
+      const v = (newAccountInput.value || "").trim();
+      if (!v) return;
+      if (v === ADMIN_NAME) {
+        alert('Administrator already always exists.');
+        newAccountInput.value = '';
+        return;
+      }
+      try {
+        const snap = await getDoc(accountsDocRef);
+        const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+        if (existing.includes(v)) {
+          alert('Account already exists.');
+          return;
+        }
+        const updated = existing.includes(ADMIN_NAME) ? [...existing, v] : [ADMIN_NAME, ...existing, v];
+        await setDoc(accountsDocRef, { list: updated }, { merge: true });
+        newAccountInput.value = '';
+      } catch (err) {
+        alert('Failed to add account: ' + err.message);
+      }
+    });
+
+    // login & password flow
+    let currentUser = null;
+    const passwordFlow = { active: false, account: null, mode: null };
+
     async function startPasswordFlowFor(accountName) {
-      passwordFlow.active = true; passwordFlow.account = accountName; passwordFlow.mode = null;
+      passwordFlow.active = true;
+      passwordFlow.account = accountName;
+      passwordFlow.mode = null;
+
       accountButtons.style.display = 'none';
       passwordArea.style.display = 'flex';
-      passwordArea.setAttribute('aria-hidden','false');
+      passwordArea.setAttribute('aria-hidden', 'false');
+
+      loginHint.textContent = '';
+      avatarCircle.textContent = (accountName && typeof accountName === 'string') ? accountName.trim().charAt(0).toUpperCase() : '';
       pwPromptText.textContent = `Sign in as ${accountName}`;
-      pwErr.style.display = 'none'; pwErr.textContent = '';
-      avatarCircle.textContent = accountName.charAt(0).toUpperCase();
+
+      pwErr.style.display = 'none';
+      pwErr.textContent = '';
+      passwordInput.classList.remove('input-error');
 
       try {
-        const snap = await getDoc(passwordsDocRef);
-        const map = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        const pwSnap = await getDoc(passwordsDocRef);
+        const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
         if (map && map[accountName]) {
           passwordFlow.mode = 'enter';
-          enterPw.style.display = 'flex'; createPw.style.display = 'none';
-          passwordInput.value = ''; passwordInput.focus();
+          enterPw.style.display = 'flex';
+          createPw.style.display = 'none';
+          passwordInput.value = '';
+          passwordInput.focus();
         } else {
           passwordFlow.mode = 'create';
-          enterPw.style.display = 'none'; createPw.style.display = 'flex';
-          newPasswordInput.value=''; newPasswordRetype.value=''; newPasswordInput.focus();
+          enterPw.style.display = 'none';
+          createPw.style.display = 'flex';
+          newPasswordInput.value = '';
+          newPasswordRetype.value = '';
+          newPasswordInput.focus();
         }
-      } catch(e){
+      } catch (err) {
         passwordFlow.mode = 'create';
-        enterPw.style.display = 'none'; createPw.style.display = 'flex';
+        enterPw.style.display = 'none';
+        createPw.style.display = 'flex';
       }
     }
 
     function endPasswordFlow() {
-      passwordFlow.active = false; passwordFlow.account = null; passwordFlow.mode = null;
+      passwordFlow.active = false;
+      passwordFlow.account = null;
+      passwordFlow.mode = null;
+
       passwordArea.style.display = 'none';
-      passwordArea.setAttribute('aria-hidden','true');
+      passwordArea.setAttribute('aria-hidden', 'true');
       accountButtons.style.display = 'flex';
       avatarCircle.textContent = '';
+      loginHint.textContent = 'Click/Press your account to sign in';
       pwPromptText.textContent = '';
-      pwErr.style.display = 'none'; pwErr.textContent = '';
+
+      pwErr.style.display = 'none';
+      pwErr.textContent = '';
+      passwordInput.classList.remove('input-error');
     }
 
-    cancelPwBtn.addEventListener('click', endPasswordFlow);
-    cancelCreateBtn.addEventListener('click', endPasswordFlow);
+    document.getElementById('cancelPwBtn').addEventListener('click', endPasswordFlow);
+    document.getElementById('cancelCreateBtn').addEventListener('click', endPasswordFlow);
 
-    createPwBtn.addEventListener('click', async ()=> {
-      const p1 = (newPasswordInput.value||'').trim();
-      const p2 = (newPasswordRetype.value||'').trim();
-      if(!p1||!p2){ alert('Enter and retype password'); return; }
-      if(p1!==p2){ alert('Passwords do not match'); return; }
+    document.getElementById('createPwBtn').addEventListener('click', async () => {
+      const p1 = (newPasswordInput.value || '').trim();
+      const p2 = (newPasswordRetype.value || '').trim();
+      if (!p1 || !p2) { alert('Please enter and retype the new password.'); return; }
+      if (p1 !== p2) { alert('Passwords do not match.'); return; }
       const acct = passwordFlow.account;
       try {
         const hashed = await hashPassword(p1);
         const snap = await getDoc(passwordsDocRef);
-        const map = (snap.exists() && snap.data().map) ? snap.data().map : {};
-        map[acct] = hashed;
-        await setDoc(passwordsDocRef, { map }, { merge: true });
-        finishLoginAs(acct);
-      } catch(e){ alert('Failed to set password: '+(e.message||e)); }
+        const existingMap = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        existingMap[acct] = hashed;
+        await setDoc(passwordsDocRef, { map: existingMap }, { merge: true });
+        startBootSequence(acct);
+      } catch (err) {
+        alert('Failed to set password: ' + (err.message || err));
+      }
     });
 
     submitPwBtn.addEventListener('click', async () => {
-      const p = (passwordInput.value||'').trim();
-      if(!p){ pwErr.style.display='block'; pwErr.textContent='Please enter your password'; passwordInput.focus(); return; }
+      const p = (passwordInput.value || '').trim();
+      if (!p) {
+        pwErr.textContent = 'Please enter your password';
+        pwErr.style.display = 'block';
+        passwordInput.classList.add('input-error');
+        passwordInput.focus();
+        return;
+      }
       const acct = passwordFlow.account;
       try {
         const hashed = await hashPassword(p);
-        const snap = await getDoc(passwordsDocRef);
-        const map = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        const pwSnap = await getDoc(passwordsDocRef);
+        const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
         const stored = map[acct] || null;
-        if (!stored) { passwordFlow.mode = 'create'; enterPw.style.display='none'; createPw.style.display='flex'; return; }
-        if (hashed === stored) { finishLoginAs(acct); } else { pwErr.style.display='block'; pwErr.textContent='Incorrect password'; passwordInput.focus(); return; }
-      } catch(e){ alert('Failed to verify password: '+(e.message||e)); }
+        if (!stored) {
+          passwordFlow.mode = 'create';
+          enterPw.style.display = 'none';
+          createPw.style.display = 'flex';
+          return;
+        }
+        if (hashed === stored) {
+          pwErr.style.display = 'none';
+          pwErr.textContent = '';
+          passwordInput.classList.remove('input-error');
+          startBootSequence(acct);
+        } else {
+          pwErr.textContent = `Incorrect password for ${acct}`;
+          pwErr.style.display = 'block';
+          passwordInput.classList.add('input-error');
+          passwordInput.focus();
+          return;
+        }
+      } catch (err) {
+        alert('Failed to verify password: ' + (err.message || err));
+      }
     });
 
-    passwordInput.addEventListener('input', ()=> { pwErr.style.display='none'; pwErr.textContent=''; });
+    passwordInput.addEventListener('input', () => {
+      if (pwErr.style.display === 'block') {
+        pwErr.style.display = 'none';
+        pwErr.textContent = '';
+        passwordInput.classList.remove('input-error');
+      }
+    });
 
-    /********** Login finished UI changes **********/
+    passwordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitPwBtn.click();
+      }
+    });
+
+    async function startBootSequence(accountName) {
+      loginCard.classList.add('fade-out');
+
+      setTimeout(async () => {
+        loginCard.style.visibility = 'hidden';
+        bootOverlay.style.display = 'flex';
+        requestAnimationFrame(() => bootBox.classList.add('show'));
+
+        (async function hiddenSetup() {
+          try {
+            await getDocs(query(collection(db, 'messages'), orderBy('time', 'asc')));
+          } catch (e) {
+            console.warn('Hidden setup failed (ignored).');
+          }
+        })();
+
+        setTimeout(() => {
+          bootBox.classList.remove('show');
+          setTimeout(() => {
+            bootOverlay.style.display = 'none';
+            loginOverlay.style.display = 'none';
+            finishLoginAs(accountName);
+            loginCard.style.visibility = '';
+            loginCard.classList.remove('fade-out');
+          }, 450);
+        }, 3000);
+      }, 460);
+    }
+
     function finishLoginAs(accountName) {
       currentUser = accountName;
-      loginOverlay.style.display = 'none';
-      // show composer and side panels
-      composer.style.display = 'flex';
-      dmPanel.classList.add('open'); dmPanel.setAttribute('aria-hidden','false'); dmPanel.style.display = 'block';
-      serverSelectPanel.classList.add('open'); serverSelectPanel.setAttribute('aria-hidden','false'); serverSelectPanel.style.display = 'block';
+      pageInner.style.display = '';
+      if (currentUser === ADMIN_NAME) {
+        showAdminPanel();
+        adminPanel.setAttribute('aria-hidden', 'false');
+      } else {
+        hideAdminPanel();
+        adminPanel.setAttribute('aria-hidden', 'true');
+      }
 
-      // manage button only for admin
-      manageBtn.style.display = (currentUser === ADMIN_NAME) ? 'inline-block' : 'none';
+      // Servers panel visible for every signed-in account
+      serversPanel.style.display = '';
+      serversPanel.classList.add('panel-open');
+      serversPanel.setAttribute('aria-hidden', 'false');
+
+      // Show admin's in-panel server add controls only for admin
+      if (currentUser === ADMIN_NAME) {
+        newServerRow.style.display = 'flex';
+      } else {
+        newServerRow.style.display = 'none';
+      }
+
+      messageInput.focus();
+
+      passwordArea.style.display = 'none';
+      accountButtons.style.display = 'flex';
+      passwordFlow.active = false;
+      passwordFlow.account = null;
+      passwordFlow.mode = null;
+      avatarCircle.textContent = '';
+      loginHint.textContent = 'Click/Press your account to sign in';
+      pwPromptText.textContent = '';
 
       signOutBtn.style.display = 'inline-block';
       changePwBtn.style.display = 'inline-block';
 
-      endPasswordFlow();
-      renderDMList();
-      renderServerSelectionList();
-      renderMessages();
       updateClearButtonState();
 
-      // scroll near bottom
-      setTimeout(()=>{ try{ messagesDiv.scrollTop = messagesDiv.scrollHeight; }catch(e){} }, 200);
+      refreshChatWithOptions();
+
+      populateServersFor(currentUser);
+
+      renderMessages(lastMessages);
+    }
+
+    function showAdminPanel() {
+      if (adminPanel.classList.contains('panel-open')) return;
+      adminPanel.style.display = 'block';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          adminPanel.classList.add('panel-open');
+        });
+      });
+    }
+    function hideAdminPanel() {
+      if (!adminPanel.classList.contains('panel-open')) {
+        adminPanel.style.display = 'none';
+        return;
+      }
+      adminPanel.classList.remove('panel-open');
+      const t = 520;
+      setTimeout(() => {
+        if (!adminPanel.classList.contains('panel-open')) {
+          adminPanel.style.display = 'none';
+        }
+      }, t + 60);
     }
 
     function signOut() {
-      if (!confirm('Sign out?')) return;
       currentUser = null;
-      // hide composer & panels
-      composer.style.display = 'none';
-      dmPanel.classList.remove('open'); dmPanel.setAttribute('aria-hidden','true'); dmPanel.style.display = 'none';
-      serverSelectPanel.classList.remove('open'); serverSelectPanel.setAttribute('aria-hidden','true'); serverSelectPanel.style.display = 'none';
-      manageBtn.style.display = 'none';
+
+      pageInner.classList.add('fade-out');
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
 
-      // show login overlay
-      loginOverlay.style.display = 'flex';
-      // reset chat target
-      chatTarget = { type:'main', name:null };
-      renderMessages();
-    }
-    signOutBtn.addEventListener('click', signOut);
+      hideAdminPanel();
+      serversPanel.classList.remove('panel-open');
+      serversPanel.style.display = 'none';
+      serversPanel.setAttribute('aria-hidden', 'true');
 
-    changePwBtn.addEventListener('click', ()=> {
-      if (!currentUser) { alert('No user'); return; }
-      const current = prompt('Enter current password (leave blank if none):','');
-      const newp = prompt('Enter new password:','');
-      const newp2 = prompt('Retype new password:','');
-      (async ()=> {
-        if (!newp || !newp2 || newp !== newp2) { alert('New passwords do not match or empty.'); return; }
-        try {
-          const pwSnap = await getDoc(passwordsDocRef);
-          const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
-          const stored = map[currentUser] || null;
-          if (stored) {
-            if (!current) { alert('Please enter current password.'); return; }
-            const oldHash = await hashPassword(current);
-            if (oldHash !== stored) { alert('Current password incorrect.'); return; }
-          }
-          const newHash = await hashPassword(newp);
-          map[currentUser] = newHash;
-          await setDoc(passwordsDocRef, { map }, { merge: true });
-          alert('Password updated.');
-        } catch(e){ alert('Failed to update password: '+(e.message||e)); }
-      })();
+      setTimeout(() => {
+        pageInner.style.display = 'none';
+        pageInner.classList.remove('fade-out');
+
+        loginOverlay.style.display = 'flex';
+        loginCard.style.visibility = '';
+        loginCard.classList.remove('fade-out');
+        loginCard.classList.remove('split-open');
+        loginCard.classList.remove('scale-in');
+
+        splitTop.style.display = '';
+        splitBottom.style.display = '';
+        accountButtons.style.visibility = 'visible';
+        accountButtons.classList.remove('fade-out');
+        accountButtons.classList.add('fade-in');
+
+        requestAnimationFrame(() => {
+          loginCard.classList.add('scale-in');
+          void loginCard.offsetWidth;
+          loginCard.classList.add('split-open');
+        });
+
+        setTimeout(() => {
+          splitTop.style.display = 'none';
+          splitBottom.style.display = 'none';
+          loginCard.classList.remove('split-open');
+        }, 3000);
+
+        passwordArea.style.display = 'none';
+
+        avatarCircle.textContent = '';
+        loginHint.textContent = 'Click/Press your account to sign in';
+        pwPromptText.textContent = '';
+
+        renderMessages(lastMessages);
+      }, 420);
+    }
+
+    signOutBtn.addEventListener('click', () => {
+      if (!confirm('Sign out?')) return;
+      signOut();
     });
 
-    /********** DM and server panels rendering **********/
-    function renderDMList() {
-      dmList.innerHTML = '';
-      const list = Array.isArray(accountsCache) ? accountsCache.slice() : [];
-      for (const name of list) {
-        if (!name) continue;
-        if (currentUser && name === currentUser) continue;
-        const li = document.createElement('li');
-        li.dataset.name = name;
-        li.textContent = name;
-        li.addEventListener('click', ()=> {
-          chatTarget = { type:'user', name: name };
-          highlightSelections();
-          renderMessages();
-        });
-        dmList.appendChild(li);
+    changePwBtn.addEventListener('click', () => {
+      if (!currentUser) {
+        alert('No user signed in.');
+        return;
       }
-      highlightSelections();
-    }
+      pwChangeTarget = currentUser;
+      cpCurrent.value = '';
+      cpNew.value = '';
+      cpNewRetype.value = '';
+      cpCurrent.style.display = '';
+      pwMsg.textContent = 'Enter your current password and a new password.';
+      pwBackdrop.style.display = 'flex';
+    });
+    cpCancelBtn.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
+    closePwModal.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
 
-    function renderServerSelectionList() {
-      serverSelectList.innerHTML = '';
-      const names = Object.keys(serversMap || {}).sort();
-      for (const s of names) {
-        const sd = normalizeServerData(s);
-        const members = sd.members || [];
-        if (currentUser !== ADMIN_NAME && !members.includes(currentUser)) continue;
-        const li = document.createElement('li');
-        li.dataset.name = s;
-        li.textContent = s;
-        li.addEventListener('click', ()=> {
-          chatTarget = { type:'server', name: s };
-          highlightSelections();
-          renderMessages();
-        });
-        serverSelectList.appendChild(li);
-      }
-      highlightSelections();
-    }
-
-    function highlightSelections() {
-      const dmItems = dmList.querySelectorAll('li');
-      dmItems.forEach(li => li.classList.toggle('selected', chatTarget.type === 'user' && chatTarget.name === li.dataset.name));
-      const srvItems = serverSelectList.querySelectorAll('li');
-      srvItems.forEach(li => li.classList.toggle('selected', chatTarget.type === 'server' && chatTarget.name === li.dataset.name));
-    }
-
-    /********** Messages rendering **********/
-    function renderMessages() {
-      messagesDiv.innerHTML = '';
-      if (!Array.isArray(lastMessages) || lastMessages.length === 0) return;
-
-      let visibleMessages = [];
-      if (!chatTarget || chatTarget.type === 'main') {
-        visibleMessages = lastMessages.filter(m => !m.dmTarget);
-      } else if (chatTarget.type === 'server') {
-        const sd = normalizeServerData(chatTarget.name);
-        const members = sd.members || [];
-        if (!currentUser || (!members.includes(currentUser) && currentUser !== ADMIN_NAME)) { visibleMessages = []; }
-        else visibleMessages = lastMessages.filter(m => m.dmTarget === chatTarget.name);
-      } else if (chatTarget.type === 'user') {
-        if (!currentUser) visibleMessages = [];
-        else visibleMessages = lastMessages.filter(m => {
-          if (!m.dmTarget) return false;
-          const sentBy = (m.name || '');
-          const t = m.dmTarget;
-          return (t === chatTarget.name && sentBy === currentUser) || (t === currentUser && sentBy === chatTarget.name);
-        });
+    cpSaveBtn.addEventListener('click', async () => {
+      if (!currentUser) { alert('No user signed in.'); return; }
+      const target = pwChangeTarget || currentUser;
+      if (target !== currentUser && currentUser !== ADMIN_NAME) {
+        alert('Only Administrator may change other account passwords.');
+        return;
       }
 
-      if (visibleMessages.length === 0) return;
+      const oldp = (cpCurrent.value || '').trim();
+      const newp = (cpNew.value || '').trim();
+      const newp2 = (cpNewRetype.value || '').trim();
+      if (!newp || !newp2) { alert('Enter the new password and retype it.'); return; }
+      if (newp !== newp2) { alert('New passwords do not match.'); return; }
 
-      const repliesByParent = {};
-      const topLevel = [];
-      for (const m of visibleMessages) {
-        if (m.parentId) { repliesByParent[m.parentId] = repliesByParent[m.parentId] || []; repliesByParent[m.parentId].push(m); }
-        else topLevel.push(m);
-      }
+      try {
+        const pwSnap = await getDoc(passwordsDocRef);
+        const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
+        const stored = map[target] || null;
 
-      const topTime = formatTimestamp(topLevel[0]?.time);
-      messagesDiv.appendChild(createTimestampRow(topTime));
-
-      for (const m of topLevel) {
-        const who = (m.name && String(m.name).trim()) ? String(m.name).trim() : 'Unknown';
-        const text = (m.text && String(m.text)) ? m.text : '';
-
-        const row = document.createElement('div'); row.className = 'message-row';
-        const div = document.createElement('div'); div.className = 'message';
-        div.style.background = colorForName(who);
-        const nameSpan = document.createElement('span'); nameSpan.className = 'name'; nameSpan.textContent = who + ':';
-        const contentSpan = document.createElement('span'); contentSpan.className = 'content'; contentSpan.textContent = ' ' + text;
-        div.appendChild(nameSpan); div.appendChild(contentSpan);
-
-        const replyBtn = document.createElement('button'); replyBtn.type='button'; replyBtn.className='icon-btn reply-btn'; replyBtn.title='Reply'; replyBtn.innerHTML='↪';
-        replyBtn.addEventListener('click', (ev)=> { ev.stopPropagation(); replyTargetId = m.id; replyTargetName = who; replyIndicatorText.textContent = `Replying to ${who}`; replyIndicator.style.display = 'flex'; replyIndicator.setAttribute('aria-hidden','false'); messageInput.focus(); });
-
-        const actions = document.createElement('div'); actions.className = 'actions';
-        const canAct = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
-        if (canAct) {
-          const trash = document.createElement('button'); trash.className='icon-btn trash'; trash.title='Delete message'; trash.innerHTML='🗑';
-          trash.addEventListener('click', async (ev)=> { ev.stopPropagation(); if (!confirm('Delete this message?')) return; try { await deleteDoc(doc(db, 'messages', m.id)); } catch(e){ alert('Failed to delete: '+(e.message||e)); } });
-          actions.appendChild(trash);
-
-          const edit = document.createElement('button'); edit.className='icon-btn pencil'; edit.title='Edit'; edit.innerHTML='✏';
-          edit.addEventListener('click', (ev)=> { ev.stopPropagation(); startEdit(row, div, contentSpan, m); });
-          actions.appendChild(edit);
+        if (target === currentUser && stored) {
+          if (!oldp) { alert('Enter current password.'); return; }
+          const oldHash = await hashPassword(oldp);
+          if (oldHash !== stored) { alert('Current password incorrect.'); return; }
         }
 
-        row.appendChild(div); row.appendChild(replyBtn); row.appendChild(actions);
-        messagesDiv.appendChild(row);
-
-        const replies = repliesByParent[m.id] || [];
-        if (replies.length) {
-          replies.sort((a,b)=> {
-            const ta = a.time && a.time.toDate ? a.time.toDate().getTime() : (new Date(a.time || 0)).getTime();
-            const tb = b.time && b.time.toDate ? b.time.toDate().getTime() : (new Date(b.time || 0)).getTime();
-            return ta - tb;
-          });
-          const wrap = document.createElement('div'); wrap.className='replies-wrapper';
-          for (const r of replies) {
-            const el = document.createElement('div'); el.className='reply';
-            const who2 = (r.name && String(r.name).trim()) ? r.name : 'Unknown';
-            el.innerHTML = `<span class="r-name">${who2}:</span> ${String(r.text || '')}`;
-            wrap.appendChild(el);
-          }
-          messagesDiv.appendChild(wrap);
-        }
+        const newHash = await hashPassword(newp);
+        map[target] = newHash;
+        await setDoc(passwordsDocRef, { map }, { merge: true });
+        alert('Password updated.');
+        pwBackdrop.style.display = 'none';
+        pwChangeTarget = null;
+        cpCurrent.style.display = '';
+      } catch (err) {
+        alert('Failed to change password: ' + (err.message || err));
       }
-
-      setTimeout(()=>{ try{ messagesDiv.scrollTop = messagesDiv.scrollHeight; }catch(e){} }, 80);
-    }
-
-    function startEdit(row, div, contentSpan, messageObj) {
-      const parent = div.parentElement;
-      const ed = document.createElement('div'); ed.className='edit-area';
-      const ta = document.createElement('textarea'); ta.value = messageObj.text || '';
-      ed.appendChild(ta);
-      const save = document.createElement('button'); save.className='icon-btn'; save.textContent='Save';
-      save.addEventListener('click', async (ev)=> { ev.stopPropagation(); try { await setDoc(doc(db, 'messages', messageObj.id), { name: messageObj.name, text: ta.value, time: messageObj.time, parentId: messageObj.parentId || null, dmTarget: messageObj.dmTarget || null }, { merge: true }); } catch(e){ alert('Failed to save edit: '+(e.message||e)); } });
-      ed.appendChild(save);
-      const cancel = document.createElement('button'); cancel.className='icon-btn cancel-btn'; cancel.textContent='Cancel';
-      cancel.addEventListener('click', ()=> parent.replaceChild(div, ed));
-      ed.appendChild(cancel);
-      parent.replaceChild(ed, div);
-    }
-
-    /********** Composer actions **********/
-    sendBtn.addEventListener('click', addMessage);
-    messageInput.addEventListener('keydown', (e)=> { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); addMessage(); } });
-
-    deleteCurrentBtn.addEventListener('click', ()=> {
-      messageInput.value = ''; replyTargetId = null; replyTargetName = null; replyIndicator.style.display='none'; replyIndicator.setAttribute('aria-hidden','true'); replyIndicatorText.textContent='';
     });
 
-    async function addMessage() {
-      if (!currentUser) { alert('Sign in first'); return; }
-      const text = (messageInput.value||'').trim();
-      if (!text) return;
-      try {
-        const payload = { name: currentUser, text, time: serverTimestamp() };
-        if (replyTargetId) payload.parentId = replyTargetId;
-        if (chatTarget && chatTarget.type === 'server') payload.dmTarget = chatTarget.name;
-        else if (chatTarget && chatTarget.type === 'user') payload.dmTarget = chatTarget.name;
-        await addDoc(collection(db, 'messages'), payload);
-        messageInput.value = ''; replyTargetId = null; replyTargetName = null; replyIndicator.style.display='none';
-        setTimeout(()=>{ try{ messagesDiv.scrollTop = messagesDiv.scrollHeight; }catch(e){} }, 50);
-      } catch(e){ alert('Failed to send message: '+(e.message||e)); }
-    }
+    const messagesCol = collection(db, 'messages');
+    const messagesQuery = query(messagesCol, orderBy('time', 'asc'));
 
-    cancelReplyBtn.addEventListener('click', ()=> { replyTargetId = null; replyTargetName = null; replyIndicator.style.display='none'; replyIndicator.setAttribute('aria-hidden','true'); replyIndicatorText.textContent=''; });
-
-    /********** Emoji picker **********/
-    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😜","😝","🫠","😎","🤓"];
-    emojis.forEach(e => {
-      const btn = document.createElement('button'); btn.className='emoji-btn'; btn.type='button'; btn.textContent=e;
-      btn.addEventListener('click', ()=> { messageInput.value += e; emojiPicker.style.display='none'; messageInput.focus(); });
-      emojiGrid.appendChild(btn);
-    });
-    emojiBtn.addEventListener('click', ()=> { emojiPicker.style.display = (emojiPicker.style.display === 'block') ? 'none' : 'block'; });
-    document.addEventListener('click', (ev)=> { if (!document.getElementById('emojiRow').contains(ev.target)) emojiPicker.style.display='none'; });
-
-    /********** Management modal handlers **********/
-    manageBtn.addEventListener('click', ()=> {
-      if (currentUser !== ADMIN_NAME) return;
-      manageBackdrop.style.display = 'flex';
-      manageBackdrop.setAttribute('aria-hidden','false');
-    });
-    closeManage.addEventListener('click', ()=> { manageBackdrop.style.display='none'; manageBackdrop.setAttribute('aria-hidden','true'); });
-
-    howBtn.addEventListener('click', ()=> { howBackdrop.style.display = 'flex'; howBackdrop.setAttribute('aria-hidden','false'); });
-    howClose.addEventListener('click', ()=> { howBackdrop.style.display = 'none'; howBackdrop.setAttribute('aria-hidden','true'); });
-    howBackdrop.addEventListener('click', (ev)=> { if (ev.target === howBackdrop) howBackdrop.style.display='none'; });
-
-    /********** Admin management: accounts & servers **********/
-    addAccountBtn.addEventListener('click', async ()=> {
-      const v = (newAccountInput.value||'').trim();
-      if (!v) return;
-      if (v === ADMIN_NAME) { alert('Administrator exists'); newAccountInput.value=''; return; }
-      try {
-        const snap = await getDoc(accountsDocRef);
-        const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-        if (existing.includes(v)) { alert('Account exists'); return; }
-        const updated = existing.includes(ADMIN_NAME) ? [...existing, v] : [ADMIN_NAME, ...existing, v];
-        await setDoc(accountsDocRef, { list: updated }, { merge: true });
-        newAccountInput.value = '';
-      } catch(e){ alert('Failed to add account: '+(e.message||e)); }
-    });
-
-    function populateManageAccounts(list) {
-      accountsList.innerHTML = '';
-      const arr = Array.isArray(list) ? list.slice() : [];
-      if (!arr.includes(ADMIN_NAME)) arr.unshift(ADMIN_NAME);
-      for (const name of arr) {
-        const li = document.createElement('li');
-        const label = document.createElement('span'); label.textContent = name;
-        const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px';
-        if (name === ADMIN_NAME) {
-          const rm = document.createElement('button'); rm.className='remove-account disabled'; rm.textContent='Remove'; rm.disabled=true;
-          actions.appendChild(rm);
-        } else {
-          const changeBtn = document.createElement('button'); changeBtn.className='change-account-pw'; changeBtn.textContent='Change Password';
-          changeBtn.addEventListener('click', ()=> {
-            if (currentUser !== ADMIN_NAME) { alert('Only admin'); return; }
-            const newpw = prompt(`Set a new password for ${name}:`,'');
-            (async ()=> {
-              if (!newpw) return;
-              try {
-                const snap = await getDoc(passwordsDocRef);
-                const map = (snap.exists() && snap.data().map) ? snap.data().map : {};
-                map[name] = await hashPassword(newpw);
-                await setDoc(passwordsDocRef, { map }, { merge: true });
-                alert('Password set.');
-              } catch(e){ alert('Failed to set pw: '+(e.message||e)); }
-            })();
-          });
-          actions.appendChild(changeBtn);
-
-          const rm = document.createElement('button'); rm.className='remove-account'; rm.textContent='Remove';
-          rm.addEventListener('click', async ()=> {
-            if (!confirm(`Remove account "${name}"?`)) return;
-            try {
-              const snap = await getDoc(accountsDocRef);
-              const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-              const filtered = existing.filter(n => n !== name && n !== undefined && n !== null);
-              if (!filtered.includes(ADMIN_NAME)) filtered.unshift(ADMIN_NAME);
-              await setDoc(accountsDocRef, { list: filtered }, { merge: true });
-            } catch(e){ alert('Failed to remove account: '+(e.message||e)); }
-          });
-          actions.appendChild(rm);
-        }
-        li.appendChild(label); li.appendChild(actions);
-        accountsList.appendChild(li);
-      }
-    }
-
-    addServerBtn.addEventListener('click', async ()=> {
-      if (currentUser !== ADMIN_NAME) return alert('Only admin may add server here.');
-      const name = (newServerInput.value||'').trim();
-      if (!name) return;
-      try {
-        const snap = await getDoc(serversDocRef);
-        const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-        if (existing[name]) { alert('Server exists'); return; }
-        existing[name] = { members: [ADMIN_NAME], creator: ADMIN_NAME };
-        await setDoc(serversDocRef, { map: existing }, { merge: true });
-        newServerInput.value = '';
-      } catch(e){ alert('Failed to add server: '+(e.message||e)); }
-    });
-
-    function populateManageServers(map) {
-      serversList.innerHTML = '';
-      const names = Object.keys(map || {}).sort();
-      for (const s of names) {
-        const sd = normalizeServerData(s);
-        const creator = sd.creator || null;
-        const li = document.createElement('li');
-        const label = document.createElement('span'); label.textContent = s;
-        const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px';
-
-        const editBtn = document.createElement('button'); editBtn.className = 'change-account-pw'; editBtn.textContent = 'Edit';
-        editBtn.addEventListener('click', async ()=> {
-          const newName = prompt('Enter new server name (leave blank to cancel):', s);
-          if (!newName || newName.trim() === '' || newName === s) return;
-          const newTrim = newName.trim();
-          try {
-            const snap = await getDoc(serversDocRef);
-            const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-            if (existing[newTrim]) { alert('A server with that name already exists.'); return; }
-            existing[newTrim] = existing[s];
-            delete existing[s];
-            await setDoc(serversDocRef, { map: existing }, { merge: true });
-            try {
-              const msgsSnap = await getDocs(collection(db,'messages'));
-              const updates = [];
-              msgsSnap.forEach(md => {
-                const data = md.data();
-                if (data && data.dmTarget === s) updates.push(updateDoc(doc(db,'messages', md.id), { dmTarget: newTrim }));
-              });
-              if (updates.length) await Promise.all(updates);
-            } catch (e2) { console.warn('Failed update msgs after rename'); }
-          } catch(e){ alert('Rename failed: '+(e.message||e)); }
+    onSnapshot(messagesQuery, snapshot => {
+      const msgs = [];
+      snapshot.forEach(docSnap => {
+        const d = docSnap.data();
+        msgs.push({
+          id: docSnap.id,
+          name: d.name,
+          text: d.text || "",
+          time: d.time || null,
+          parentId: d.parentId || null,
+          dmTarget: d.dmTarget || null
         });
-        actions.appendChild(editBtn);
+      });
+      lastMessages = msgs;
+      renderMessages(msgs);
+    }, err => {
+      console.error("Realtime messages error:", err);
+    });
 
-        const del = document.createElement('button'); del.className='remove-account'; del.textContent='Delete';
-        del.addEventListener('click', async ()=> {
-          if (!confirm(`Delete server "${s}"?`)) return;
-          try {
-            const snap = await getDoc(serversDocRef);
-            const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-            if (existing[s]) delete existing[s];
-            await setDoc(serversDocRef, { map: existing }, { merge: true });
-            try {
-              const msgsSnap = await getDocs(collection(db,'messages'));
-              const updates = [];
-              msgsSnap.forEach(md => {
-                const data = md.data();
-                if (data && data.dmTarget === s) updates.push(updateDoc(doc(db,'messages', md.id), { dmTarget: null }));
-              });
-              if (updates.length) await Promise.all(updates);
-            } catch (e2) { console.warn('Failed clearing dmTarget after server delete'); }
-          } catch(e){ alert('Failed to delete server: '+(e.message||e)); }
-        });
-        actions.appendChild(del);
-
-        li.appendChild(label); li.appendChild(actions); serversList.appendChild(li);
-      }
-    }
-
-    function normalizeServerData(serverName) {
+    function getServerData(serverName) {
       const entry = serversMap && serversMap[serverName];
       if (!entry) return { members: [], creator: null };
       if (Array.isArray(entry)) return { members: entry.slice(), creator: null };
@@ -978,45 +1343,584 @@
       return { members: [], creator: null };
     }
 
-    function updateClearButtonState() {
-      if (currentUser === ADMIN_NAME) { clearBtn.style.display='inline-block'; clearBtn.disabled=false; } else { clearBtn.style.display='none'; clearBtn.disabled=true; }
+    function renderMessages(messages) {
+      messagesDiv.innerHTML = "";
+      if (!Array.isArray(messages) || messages.length === 0) return;
+
+      const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
+
+      let visibleMessages = [];
+      if (chatWith === "Main Server") {
+        visibleMessages = messages.filter(m => !m.dmTarget);
+      } else if (serversMap && Object.prototype.hasOwnProperty.call(serversMap, chatWith)) {
+        const sd = getServerData(chatWith);
+        const members = sd.members;
+        if (!currentUser || !members.includes(currentUser)) {
+          visibleMessages = [];
+        } else {
+          visibleMessages = messages.filter(m => m.dmTarget === chatWith);
+        }
+      } else {
+        if (!currentUser) {
+          visibleMessages = [];
+        } else {
+          visibleMessages = messages.filter(m => {
+            if (!m.dmTarget) return false;
+            const sentBy = (m.name || "");
+            const t = m.dmTarget;
+            return (t === chatWith && sentBy === currentUser) || (t === currentUser && sentBy === chatWith);
+          });
+        }
+      }
+
+      if (visibleMessages.length === 0) return;
+
+      const repliesByParent = {};
+      const topLevel = [];
+      for (const m of visibleMessages) {
+        if (m.parentId) {
+          repliesByParent[m.parentId] = repliesByParent[m.parentId] || [];
+          repliesByParent[m.parentId].push(m);
+        } else {
+          topLevel.push(m);
+        }
+      }
+
+      const topTime = formatTimestamp(topLevel[0]?.time);
+      messagesDiv.appendChild(createTimestampRow(topTime));
+
+      for (let i = 0; i < topLevel.length; i++) {
+        const m = topLevel[i] || {};
+        const who = (m.name && String(m.name).trim()) ? String(m.name).trim() : 'Unknown';
+        const text = (m.text && String(m.text)) ? m.text : '';
+
+        const row = document.createElement('div');
+        row.className = 'message-row';
+        row.style.position = 'relative';
+
+        const div = document.createElement('div');
+        div.className = 'message';
+        try { div.style.background = colorForName(who); } catch (e) { div.style.background = 'rgba(0,0,0,0.45)'; }
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.textContent = who + ':';
+
+        const contentSpan = document.createElement('span');
+        contentSpan.className = 'content';
+        contentSpan.textContent = ' ' + text;
+
+        div.appendChild(nameSpan);
+        div.appendChild(contentSpan);
+
+        const replyBtn = document.createElement('button');
+        replyBtn.type = 'button';
+        replyBtn.className = 'icon-btn reply-btn';
+        replyBtn.title = 'Reply';
+        replyBtn.innerHTML = '↪';
+
+        replyBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          replyTargetId = m.id;
+          replyTargetName = who;
+          replyIndicatorText.textContent = `Replying to ${who}`;
+          replyIndicator.style.display = 'flex';
+          replyIndicator.setAttribute('aria-hidden', 'false');
+          messageInput.focus();
+        });
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        const canAct = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+
+        if (canAct) {
+          const trash = document.createElement('button');
+          trash.className = 'icon-btn trash';
+          trash.title = 'Delete message';
+          trash.innerHTML = '🗑';
+          trash.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+            if (!allowedNow) { alert('Not allowed to delete this message.'); return; }
+            try {
+              await deleteDoc(doc(db, 'messages', m.id));
+              const snap = await getDocs(messagesQuery);
+              const deletes = [];
+              snap.forEach(snapDoc => {
+                const sd = snapDoc.data();
+                if (sd.parentId === m.id) deletes.push(deleteDoc(doc(db, 'messages', snapDoc.id)));
+              });
+              if (deletes.length) await Promise.all(deletes);
+            } catch (err) {
+              alert('Failed to delete message: ' + (err.message || err));
+            }
+          });
+          actions.appendChild(trash);
+
+          const edit = document.createElement('button');
+          edit.className = 'icon-btn pencil';
+          edit.title = 'Edit message';
+          edit.innerHTML = '✏';
+          edit.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+            if (!allowedNow) { alert('Not allowed to edit this message.'); return; }
+            startEdit(row, div, contentSpan, m);
+          });
+          actions.appendChild(edit);
+        }
+
+        row.appendChild(div);
+        row.appendChild(replyBtn);
+        row.appendChild(actions);
+        messagesDiv.appendChild(row);
+
+        const replies = repliesByParent[m.id] || [];
+        if (replies && replies.length > 0) {
+          replies.sort((a,b) => {
+            const ta = a.time && a.time.toDate ? a.time.toDate().getTime() : (new Date(a.time || 0)).getTime();
+            const tb = b.time && b.time.toDate ? b.time.toDate().getTime() : (new Date(b.time || 0)).getTime();
+            return ta - tb;
+          });
+          const wrap = document.createElement('div');
+          wrap.className = 'replies-wrapper';
+          for (const r of replies) {
+            const el = document.createElement('div');
+            el.className = 'reply';
+            const who2 = (r.name && String(r.name).trim()) ? r.name : 'Unknown';
+            el.innerHTML = `<span class="r-name">${who2}:</span> ${String(r.text || '')}`;
+            wrap.appendChild(el);
+          }
+          messagesDiv.appendChild(wrap);
+        }
+      }
+
+      // Optional: automatically keep scroll near bottom while viewing most recent messages.
+      // (We do not force-scroll when the user is reading older messages.)
     }
-    clearBtn.addEventListener('click', async ()=> {
-      if (currentUser !== ADMIN_NAME) { alert('Only admin'); return; }
+
+    function formatTimestamp(ts) {
+      if (!ts) return '';
       try {
-        const snap = await getDocs(collection(db,'messages'));
-        const deletes = []; snap.forEach(d => deletes.push(deleteDoc(doc(db,'messages', d.id))));
-        await Promise.all(deletes);
-      } catch(e){ alert('Failed to clear: '+(e.message||e)); }
+        const d = ts.toDate ? ts.toDate() : new Date(ts);
+        return d.toLocaleString();
+      } catch (e) {
+        return '';
+      }
+    }
+    function createTimestampRow(text) {
+      const r = document.createElement('div');
+      r.className = 'timestamp-row';
+      const l = document.createElement('div'); l.className = 'line';
+      const t = document.createElement('div'); t.className = 'timestamp-text'; t.textContent = text || '';
+      const r2 = document.createElement('div'); r2.className = 'line';
+      r.appendChild(l);
+      r.appendChild(t);
+      r.appendChild(r2);
+      return r;
+    }
+
+    function startEdit(row, div, contentSpan, messageObj) {
+      const parent = div.parentElement;
+      const ed = document.createElement('div');
+      ed.className = 'edit-area';
+      const ta = document.createElement('textarea');
+      ta.value = messageObj.text || '';
+      ed.appendChild(ta);
+      const save = document.createElement('button');
+      save.className = 'icon-btn';
+      save.textContent = 'Save';
+      save.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        try {
+          await setDoc(doc(db, 'messages', messageObj.id), { name: messageObj.name, text: ta.value, time: messageObj.time, parentId: messageObj.parentId || null, dmTarget: messageObj.dmTarget || null }, { merge: true });
+        } catch (err) {
+          alert('Failed to save edit: ' + (err.message || err));
+        }
+      });
+      ed.appendChild(save);
+      const cancel = document.createElement('button');
+      cancel.className = 'icon-btn cancel-btn';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => {
+        parent.replaceChild(div, ed);
+      });
+      ed.appendChild(cancel);
+      parent.replaceChild(ed, div);
+    }
+
+    const colors = [
+      'rgba(0, 180, 0, 0.85)',
+      'rgba(255, 165, 0, 0.95)',
+      'rgba(220, 20, 60, 0.95)',
+      'rgba(128, 0, 128, 0.95)',
+      'rgba(255, 0, 255, 0.95)'
+    ];
+    function hashStringToIndex(s, mod) {
+      let h = 5381;
+      for (let i = 0; i < s.length; i++) {
+        h = ((h << 5) + h) + s.charCodeAt(i);
+        h = h & 0xffffffff;
+      }
+      return Math.abs(h) % mod;
+    }
+    function colorForName(name) {
+      const idx = hashStringToIndex((name||"").toLowerCase(), colors.length);
+      return colors[idx];
+    }
+
+    async function enforceRetention() {
+      try {
+        const snap = await getDocs(messagesQuery);
+        const total = snap.size;
+        if (total > 100) {
+          const numToDelete = total - 10;
+          const docsToDelete = snap.docs.slice(0, numToDelete);
+          const deletes = docsToDelete.map(d => deleteDoc(doc(db, 'messages', d.id)));
+          await Promise.all(deletes);
+        }
+      } catch (err) {
+        console.error('Retention enforcement failed:', err);
+      }
+    }
+
+    sendBtn.addEventListener('click', addMessage);
+    messageInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        addMessage();
+      }
     });
 
-    /********** Init: hide composer & side panels until login overlay dismissed **********/
-    // Ensure login overlay is shown initially
-    loginOverlay.style.display = 'flex';
-    composer.style.display = 'none';
-    dmPanel.style.display = 'none';
-    serverSelectPanel.style.display = 'none';
-    manageBackdrop.style.display = 'none';
-    howBackdrop.style.display = 'none';
+    deleteCurrentBtn.addEventListener('click', () => {
+      messageInput.value = '';
+      replyTargetId = null;
+      replyTargetName = null;
+      replyIndicator.style.display = 'none';
+      replyIndicator.setAttribute('aria-hidden', 'true');
+      replyIndicatorText.textContent = '';
+    });
 
-    // small helpers
-    function formatTimestamp(ts) { if (!ts) return ''; try { const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleString(); } catch(e){ return ''; } }
-    function createTimestampRow(text) { const r=document.createElement('div'); r.className='timestamp-row'; const l=document.createElement('div'); l.className='line'; const t=document.createElement('div'); t.className='timestamp-text'; t.textContent = text||''; const r2=document.createElement('div'); r2.className='line'; r.appendChild(l); r.appendChild(t); r.appendChild(r2); return r; }
-    const colors = ['rgba(0,180,0,0.85)','rgba(255,165,0,0.95)','rgba(220,20,60,0.95)','rgba(128,0,128,0.95)','rgba(255,0,255,0.95)'];
-    function hashStringToIndex(s,mod){ let h=5381; for(let i=0;i<s.length;i++){ h=((h<<5)+h)+s.charCodeAt(i); h=h&0xffffffff; } return Math.abs(h)%mod; }
-    function colorForName(name){ return colors[hashStringToIndex((name||'').toLowerCase(), colors.length)]; }
+    async function addMessage() {
+      if (!currentUser) { alert('No user signed in.'); return; }
+      const sendName = currentUser;
+      const text = (messageInput.value || "").trim();
+      if (!sendName || !text) return;
+      try {
+        const payload = { name: sendName, text, time: serverTimestamp() };
+        if (replyTargetId) payload.parentId = replyTargetId;
 
-    // expose highlightSelections for use after accounts/servers updates
-    function highlightSelections() {
-      const dmItems = dmList.querySelectorAll('li');
-      dmItems.forEach(li => li.classList.toggle('selected', chatTarget.type==='user' && chatTarget.name===li.dataset.name));
-      const srvItems = serverSelectList.querySelectorAll('li');
-      srvItems.forEach(li => li.classList.toggle('selected', chatTarget.type==='server' && chatTarget.name===li.dataset.name));
+        const chatWith = (chatWithSelect && chatWithSelect.value) ? chatWithSelect.value : "Main Server";
+        if (chatWith && chatWith !== "Main Server") {
+          payload.dmTarget = chatWith;
+        }
+
+        await addDoc(collection(db, 'messages'), payload);
+        messageInput.value = "";
+        replyTargetId = null;
+        replyTargetName = null;
+        replyIndicator.style.display = 'none';
+        replyIndicator.setAttribute('aria-hidden', 'true');
+        replyIndicatorText.textContent = '';
+        await enforceRetention();
+
+        // keep view scrolled near bottom after sending
+        try { messagesDiv.scrollTop = messagesDiv.scrollHeight; } catch(e){}
+      } catch (err) {
+        alert("Failed to send message: " + err.message);
+      }
     }
 
-    // initial render calls (snapshots will update)
-    renderDMList();
-    renderServerSelectionList();
+    cancelReplyBtn.addEventListener('click', () => {
+      replyTargetId = null;
+      replyTargetName = null;
+      replyIndicator.style.display = 'none';
+      replyIndicator.setAttribute('aria-hidden', 'true');
+      replyIndicatorText.textContent = '';
+    });
+
+    chatWithSelect.addEventListener('change', () => {
+      renderMessages(lastMessages);
+    });
+
+    function updateClearButtonState() {
+      if (currentUser === ADMIN_NAME) {
+        clearBtn.style.display = '';
+        clearBtn.disabled = false;
+        clearBtn.title = 'Clear all messages (Administrator only)';
+      } else {
+        clearBtn.style.display = 'none';
+        clearBtn.disabled = true;
+        clearBtn.title = '';
+      }
+    }
+
+    clearBtn.addEventListener('click', async () => {
+      if (currentUser !== ADMIN_NAME) {
+        alert('Only Administrator may clear message history.');
+        updateClearButtonState();
+        return;
+      }
+      try {
+        const snap = await getDocs(collection(db, 'messages'));
+        const deletes = [];
+        snap.forEach(d => deletes.push(deleteDoc(doc(db, 'messages', d.id))));
+        await Promise.all(deletes);
+      } catch (err) {
+        alert("Failed to clear messages: " + err.message);
+      }
+    });
+
+    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😜","😝","🫠","😎","🤓"];
+    emojis.forEach(e => {
+      const btn = document.createElement('button');
+      btn.className = 'emoji-btn';
+      btn.type = 'button';
+      btn.textContent = e;
+      btn.addEventListener('click', () => {
+        messageInput.value += e;
+        emojiPicker.style.display = 'none';
+        messageInput.focus();
+      });
+      emojiGrid.appendChild(btn);
+    });
+    emojiBtn.addEventListener('click', () => {
+      emojiPicker.style.display = (emojiPicker.style.display === 'block') ? 'none' : 'block';
+    });
+    document.addEventListener('click', (ev) => {
+      if (!emojiRow.contains(ev.target)) {
+        emojiPicker.style.display = 'none';
+      }
+    });
+
+    howBtn.addEventListener('click', () => { howBackdrop.style.display = 'flex'; });
+    howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
+    howBackdrop.addEventListener('click', (ev) => { if (ev.target === howBackdrop) howBackdrop.style.display = 'none'; });
+
+    // Server admin-add wiring (added per your request: add servers from admin servers panel)
+    addServerBtn.addEventListener('click', async () => {
+      if (currentUser !== ADMIN_NAME) return alert('Only Administrator may add servers from the Servers panel.');
+      const name = (newServerInput.value || '').trim();
+      if (!name) return alert('Enter a server name.');
+      try {
+        const snap = await getDoc(serversDocRef);
+        const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        if (existing[name]) {
+          alert('A server with that name already exists.');
+          return;
+        }
+        // by default creator is admin, members include only admin initially
+        existing[name] = { members: [currentUser], creator: currentUser };
+        await setDoc(serversDocRef, { map: existing }, { merge: true });
+        newServerInput.value = '';
+      } catch (err) {
+        alert('Failed to add server: ' + (err.message || err));
+      }
+    });
+
+    closeServerModal.addEventListener('click', () => {
+      serverBackdrop.style.display = 'none';
+    });
+
+    function checkServerFormValidity() {
+      const name = (serverNameInput.value || '').trim();
+      const cbs = membersList.querySelectorAll('input[type="checkbox"]');
+      let selected = 0;
+      cbs.forEach(cb => { if (cb.checked) selected++; });
+      if (name.length > 0 && selected > 0) {
+        createServerBtn.disabled = false;
+        createServerBtn.classList.add('enabled');
+        createServerBtn.classList.remove('create-server-btn');
+      } else {
+        createServerBtn.disabled = true;
+        createServerBtn.classList.remove('enabled');
+        createServerBtn.classList.add('create-server-btn');
+      }
+    }
+
+    createServerBtn.addEventListener('click', async () => {
+      if (createServerBtn.disabled) return;
+      const name = (serverNameInput.value || '').trim();
+      if (!name) return alert('Enter a server name.');
+      const cbs = membersList.querySelectorAll('input[type="checkbox"]');
+      const members = [];
+      cbs.forEach(cb => { if (cb.checked) members.push(cb.dataset.name); });
+      if (members.length === 0) return alert('Select at least one member.');
+
+      try {
+        const snap = await getDoc(serversDocRef);
+        const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        existing[name] = { members, creator: (currentUser || (members[0] || null)) };
+        await setDoc(serversDocRef, { map: existing }, { merge: true });
+        serverBackdrop.style.display = 'none';
+        alert(`Server "${name}" created.`);
+      } catch (err) {
+        alert('Failed to create server: ' + (err.message || err));
+      }
+    });
+
+    function refreshChatWithOptions() {
+      chatWithSelect.innerHTML = "";
+      const mainOpt = document.createElement('option');
+      mainOpt.value = "Main Server";
+      mainOpt.textContent = "Main Server";
+      mainOpt.selected = true;
+      chatWithSelect.appendChild(mainOpt);
+
+      const serverNames = Object.keys(serversMap || {});
+      for (const s of serverNames) {
+        const sd = getServerData(s);
+        const members = sd.members;
+        if (!currentUser || members.includes(currentUser) || currentUser === ADMIN_NAME) {
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          chatWithSelect.appendChild(opt);
+        }
+      }
+
+      const accountValues = Array.isArray(accountsCache) ? accountsCache.slice() : [];
+      const seen = new Set();
+      for (const n of accountValues) {
+        if (!n || seen.has(n)) continue;
+        seen.add(n);
+        if (currentUser && n === currentUser) continue;
+        if (n === "Main Server") continue;
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        chatWithSelect.appendChild(opt);
+      }
+    }
+
+    // Populate servers panel for a given accountName
+    async function populateServersFor(accountName) {
+      serversList.innerHTML = '';
+      if (!accountName) {
+        serversPanel.classList.remove('panel-open');
+        serversPanel.style.display = 'none';
+        serversPanel.setAttribute('aria-hidden', 'true');
+        return;
+      }
+      serversPanel.style.display = '';
+      serversPanel.classList.add('panel-open');
+      serversPanel.setAttribute('aria-hidden', 'false');
+
+      // Admin sees all servers; non-admin sees only membership or created servers
+      const names = Object.keys(serversMap || {});
+      if (!names.length) return;
+
+      for (const s of names) {
+        const sd = getServerData(s);
+        const members = sd.members || [];
+        const creator = sd.creator || null;
+
+        // determine visibility for non-admin
+        if (currentUser !== ADMIN_NAME && !(members.includes(accountName) || creator === accountName)) {
+          continue;
+        }
+
+        const li = document.createElement('li');
+        const label = document.createElement('span');
+        label.textContent = s;
+        li.appendChild(label);
+
+        const right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.gap = '8px';
+        right.style.alignItems = 'center';
+
+        // Edit button: visible if account is creator or admin
+        const editBtn = document.createElement('button');
+        editBtn.className = 'icon-btn pencil';
+        editBtn.textContent = 'Edit';
+        const canEdit = (currentUser === ADMIN_NAME) || (creator === accountName);
+        if (canEdit) {
+          editBtn.addEventListener('click', async () => {
+            // Prompt for rename (simple edit). Admin may edit any server.
+            const newName = prompt('Enter new server name (leave blank to cancel):', s);
+            if (!newName || newName.trim() === '' || newName === s) return;
+            const newNameTrim = newName.trim();
+            try {
+              const snap = await getDoc(serversDocRef);
+              const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+              if (existing[newNameTrim]) {
+                alert('A server with that name already exists.');
+                return;
+              }
+              // move data to new key
+              existing[newNameTrim] = existing[s];
+              delete existing[s];
+              await setDoc(serversDocRef, { map: existing }, { merge: true });
+
+              // update any messages referencing the old server name as dmTarget to the new name
+              try {
+                const msgsSnap = await getDocs(collection(db, 'messages'));
+                const updates = [];
+                msgsSnap.forEach(md => {
+                  const data = md.data();
+                  if (data && data.dmTarget === s) {
+                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: newNameTrim }));
+                  }
+                });
+                if (updates.length) await Promise.all(updates);
+              } catch (err2) {
+                console.warn('Failed to update messages dmTarget after server rename:', err2?.message || err2);
+              }
+            } catch (err) {
+              alert('Failed to rename server: ' + (err.message || err));
+            }
+          });
+        } else {
+          editBtn.disabled = true;
+          editBtn.classList.add('disabled');
+        }
+        right.appendChild(editBtn);
+
+        // Delete button: admin may delete any; creators may delete their own (keeps previous creator-delete behaviour)
+        const del = document.createElement('button');
+        del.className = 'remove-account';
+        del.textContent = 'Delete';
+        if (currentUser === ADMIN_NAME || creator === accountName) {
+          del.addEventListener('click', async () => {
+            if (!confirm(`Delete server "${s}" from cloud? This will remove the server for everyone.`)) return;
+            try {
+              const snap = await getDoc(serversDocRef);
+              const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+              if (existing[s]) delete existing[s];
+              await setDoc(serversDocRef, { map: existing }, { merge: true });
+              // Also update messages that referenced this server to remove dmTarget (make them public)
+              try {
+                const msgsSnap = await getDocs(collection(db, 'messages'));
+                const updates = [];
+                msgsSnap.forEach(md => {
+                  const data = md.data();
+                  if (data && data.dmTarget === s) {
+                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: null }));
+                  }
+                });
+                if (updates.length) await Promise.all(updates);
+              } catch (err2) {
+                console.warn('Failed to update messages after server delete:', err2?.message || err2);
+              }
+            } catch (err) {
+              alert('Failed to delete server: ' + (err.message || err));
+            }
+          });
+        } else {
+          del.disabled = true;
+          del.classList.add('disabled');
+        }
+        right.appendChild(del);
+
+        li.appendChild(right);
+        serversList.appendChild(li);
+      }
+    }
+
+    // init chatWithSelect
+    refreshChatWithOptions();
 
   </script>
 </body>
