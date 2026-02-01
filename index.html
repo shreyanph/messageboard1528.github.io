@@ -41,14 +41,13 @@
       border-radius: 6px;
       pointer-events: auto;
       color: #fff;
-      cursor: pointer;
     }
 
-    /* Account & Server Management (admin-only) - blue, to right of How To Use */
-    #manageBtn {
+    /* Account & Server Management button (to the right of How To Use) - BLUE */
+    #managementBtn {
       position: fixed;
       top: 12px;
-      left: 120px;
+      left: 126px;
       z-index: 5000;
       background: rgba(30,144,255,0.95);
       border: 1px solid rgba(255,255,255,0.15);
@@ -56,7 +55,7 @@
       border-radius: 6px;
       color: #fff;
       cursor: pointer;
-      display: none; /* only for admin after login */
+      display: none;
     }
 
     /* SIGN OUT button (top-right of screen) - red background */
@@ -233,64 +232,78 @@
       font-size: 0.95em;
     }
 
-    /* Lock/Sign-in overlay */
-    #loginOverlay { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; display:flex; align-items:center; justify-content:center; z-index: 3000; background: rgba(0,0,0,0.55); }
-    .login-card { position: relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.12); padding: 26px 28px; border-radius: 12px; min-width: 320px; min-height: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); overflow: hidden; transform-origin: center center; opacity: 1; transform: scaleY(0); transition: transform 320ms cubic-bezier(.2,.9,.2,1), opacity 200ms ease; }
+    #loginOverlay { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; z-index: 3000; background: rgba(0,0,0,0.55); }
+    .login-card { position: relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.12); padding: 26px 28px; border-radius: 12px; min-width: 320px; min-height: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); overflow: hidden; transform-origin: center center; opacity: 1; transform: scaleY(0); transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 420ms ease; }
     .login-card.scale-in { transform: scaleY(1); }
-    .split-top, .split-bottom { position:absolute; left:0; right:0; background: rgba(0,0,0,0.76); z-index:2500; transition: transform 300ms cubic-bezier(.2,.9,.2,1); pointer-events:none; }
-    .split-top { top:0; height:50%; transform: translateY(0); } .split-bottom { bottom:0; height:50%; transform: translateY(0); }
-    .login-card.split-open .split-top { transform: translateY(-120%); } .login-card.split-open .split-bottom { transform: translateY(120%); }
+    .split-top, .split-bottom { position: absolute; left: 0; right: 0; background: rgba(0,0,0,0.76); z-index: 2500; transition: transform 3s cubic-bezier(.2,.9,.2,1); pointer-events: none; }
+    .split-top { top: 0; height: 50%; transform: translateY(0); }
+    .split-bottom { bottom: 0; height: 50%; transform: translateY(0); }
+    .login-card.split-open .split-top { transform: translateY(-120%); }
+    .login-card.split-open .split-bottom { transform: translateY(120%); }
 
-    .avatar { width:112px; height:112px; border-radius:50%; background: rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:48px; color:#fff; border:2px solid rgba(255,255,255,0.06); }
-    .login-title { font-size:18px; color:#fff; opacity:0.95; }
-    .account-btn { width:260px; display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:10px; background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); color:#fff; cursor:pointer; font-size:16px; }
+    .avatar { width: 112px; height: 112px; border-radius: 50%; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 48px; color: #fff; border: 2px solid rgba(255,255,255,0.06); }
+    .login-title { font-size: 18px; color: #fff; opacity: 0.95; }
+    .account-btn { width: 260px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: #fff; cursor: pointer; font-size: 16px; transition: opacity 300ms ease, transform 300ms ease; }
+    .account-btn:hover { background: rgba(255,255,255,0.06); }
 
     /* Password area */
     #passwordArea { display:none; width:100%; gap:8px; flex-direction:column; align-items:stretch; }
     #passwordArea input[type="password"] { flex:1; padding:8px; border:1px solid rgba(255,255,255,0.25); border-radius:4px; background:#fff; color:#000; }
 
-    /* Admin & Servers panels are moved into a modal when admin presses Manage. */
-    .manage-backdrop {
+    /* Management backdrop (for admin panels) */
+    #managementBackdrop {
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 18000;
-      background: rgba(0,0,0,0.6);
-      align-items: center;
+      background: rgba(0,0,0,0.5);
+      z-index: 4000;
+      align-items: flex-start;
       justify-content: center;
+      padding-top: 80px;
+      overflow-y: auto;
     }
-    .manage-modal {
-      width: min(920px, calc(100% - 40px));
-      max-height: 84vh;
-      overflow:auto;
-      background: rgba(0,0,0,0.95);
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:10px;
-      padding:16px;
-      color:#fff;
-      display:flex;
-      gap:16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-    }
-    .manage-column { flex:1; min-width:280px; }
 
-    .panel {
-      background: rgba(0,0,0,0.7);
+    #managementContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 600px;
+      width: 90%;
+      padding-bottom: 40px;
+    }
+
+    /* Admin panel & Servers panel */
+    #adminPanel, #serversPanel {
+      background: rgba(0,0,0,0.9);
       border: 1px solid rgba(255,255,255,0.12);
-      padding: 12px;
+      padding: 14px;
       border-radius: 8px;
+      width: 100%;
       color: #fff;
-      margin-bottom:12px;
     }
-    .panel h4 { margin:0 0 8px 0; }
 
-    #accountsList, #serversList { list-style:none; padding:0; margin:6px 0; max-height: 320px; overflow:auto; }
-    #accountsList li, #serversList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
+    #accountsList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
+    #accountsList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
 
-    .remove-account { background: rgba(220,20,60,0.95); border:none; color:#fff; padding:6px 10px; border-radius:6px; cursor:pointer; }
-    .remove-account.disabled { opacity:0.45; cursor:not-allowed; background: rgba(255,255,255,0.02); }
+    /* Servers list styling (same as accounts list) */
+    #serversList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
+    #serversList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
 
-    /* Change password / admin edit button style (used by admin edit in servers) */
+    .remove-account {
+      background: rgba(220,20,60,0.95);
+      border: none;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius:6px;
+      cursor:pointer;
+    }
+    .remove-account.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: rgba(255,255,255,0.02);
+      color: #fff;
+    }
+
     .change-account-pw {
       background: rgba(30,144,255,0.95);
       border: none;
@@ -298,11 +311,35 @@
       padding: 6px 10px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 14px;
-      line-height: 1.2;
+      margin-right: 6px;
     }
 
-    #addAccountBtn { background: rgba(0,180,0,0.95); border:none; color:#fff; padding:6px 8px; border-radius:6px; cursor:pointer; }
+    /* Match server edit button to account change password button */
+    .server-edit-btn {
+      background: rgba(30,144,255,0.95);
+      border: none;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 6px;
+      font-size: inherit;
+      height: auto;
+    }
+    .server-edit-btn.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: rgba(255,255,255,0.02);
+    }
+
+    #addAccountBtn {
+      background: rgba(0,180,0,0.95);
+      border: none;
+      color: #fff;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
     #clearBtn {
       background: rgba(220,20,60,0.95);
@@ -411,12 +448,16 @@
     .from-row label, .chat-with-row label { white-space: nowrap; font-weight: 600; color: #fff; }
     .from-row select, .chat-with-row select { min-width: 220px; }
 
+    /* Server modal */
     .server-backdrop { display: none; position: fixed; inset: 0; z-index: 7000; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
     .server-modal { width: 420px; background: rgba(0,0,0,0.95); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 14px; color: #fff; box-shadow: 0 8px 40px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:12px; }
     .server-modal .members-list { max-height: 220px; overflow:auto; border: 1px solid rgba(255,255,255,0.06); padding:8px; border-radius:6px; }
     .server-modal .member-row { display:flex; align-items:center; gap:8px; padding:6px 4px; }
 
-    /* Composer fixed at bottom of viewport - initially hidden until login */
+    .create-server-btn { background: rgba(0,0,0,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px; cursor: not-allowed; }
+    .create-server-btn.enabled { background: rgba(0,180,0,0.95); cursor: pointer; }
+
+    /* Composer fixed at bottom of viewport */
     .composer {
       position: fixed;
       bottom: 12px;
@@ -429,7 +470,7 @@
       padding: 10px;
       border-radius: 10px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
-      display: none; /* HIDDEN until login */
+      display: none; /* HIDDEN BY DEFAULT */
       flex-direction: column;
       gap: 8px;
     }
@@ -442,35 +483,62 @@
     .composer .controls { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
     .composer .controls button { margin: 0; }
 
-    /* Side selection panels (login-card style) - left DM and right Servers */
-    .side-panel {
+    /* Side panels for DMs (left) and Servers (right) */
+    #dmPanel, #serversSelectionPanel {
       position: fixed;
-      top: 12px; /* align with How To Use button Y */
-      z-index: 4900;
-      width: 220px;
-      background: rgba(0,0,0,0.65);
+      top: 80px;
+      width: 280px;
+      max-height: calc(100vh - 200px);
+      background: rgba(0,0,0,0.85);
       border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 10px;
-      padding: 10px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-      transform-origin: top center;
-      transform: scaleY(0);
-      transition: transform 240ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease;
-      opacity: 0;
-      display: none; /* only shown after login */
-      max-height: calc(100vh - 100px);
-      overflow: auto;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      overflow-y: auto;
+      z-index: 500;
+      display: none;
     }
-    .side-panel.open { transform: scaleY(1); opacity: 1; display: block; }
 
-    /* left & right positions */
-    #dmPanel { left: 12px; }
-    #serverSelectPanel { right: 12px; }
+    #dmPanel {
+      left: 12px;
+    }
 
-    .side-panel h4 { margin: 0 0 8px 0; font-size: 16px; color: #fff; }
-    .side-panel ul { list-style:none; padding:0; margin:0; }
-    .side-panel li { display:flex; align-items:center; justify-content:space-between; padding:6px; border-radius:8px; margin-bottom:6px; cursor:pointer; color:#fff; }
-    .side-panel li.selected { background: rgba(255,255,255,0.04); }
+    #serversSelectionPanel {
+      right: 12px;
+    }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .dm-account-btn, .server-select-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      margin-bottom: 8px;
+      transition: background 200ms ease;
+    }
+
+    .dm-account-btn:hover, .server-select-btn:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
+    .dm-account-btn.active, .server-select-btn.active {
+      background: rgba(30,144,255,0.95);
+      border-color: rgba(30,144,255,0.95);
+    }
 
     @media (max-width: 640px) {
       .page-inner { margin: 20px 12px 160px; max-width: 100%; }
@@ -485,7 +553,12 @@
       .server-modal { width: 92%; }
       .composer { left: 50%; transform: translateX(-50%); width: calc(100% - 24px); bottom: 12px; }
       #messages { max-height: calc(100vh - 340px); }
-      .side-panel { width: 180px; }
+      #dmPanel, #serversSelectionPanel {
+        width: 220px;
+        top: 60px;
+      }
+      #dmPanel { left: 8px; }
+      #serversSelectionPanel { right: 8px; }
     }
   </style>
 </head>
@@ -540,53 +613,12 @@
     </div>
   </div>
 
-  <!-- Manage modal (Admin opens this via manageBtn) -->
-  <div id="manageBackdrop" class="manage-backdrop" role="dialog" aria-modal="true" style="display:none;">
-    <div class="manage-modal" role="document" aria-label="Account and Server Management">
-      <div style="display:flex; justify-content:flex-end; width:100%; position:relative;">
-        <button id="closeManage" style="position:absolute; right:8px; top:-8px; background:transparent; border:none; color:#fff; font-size:22px; cursor:pointer;">&times;</button>
-      </div>
-      <div class="manage-column">
-        <div id="adminPanel" class="panel">
-          <h4>Accounts (cloud)</h4>
-          <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input id="newAccountInput" placeholder="New account name" style="flex:1; padding:6px;" />
-            <button id="addAccountBtn" style="padding:6px 8px;">Add</button>
-          </div>
-          <ul id="accountsList" aria-live="polite"></ul>
-        </div>
-      </div>
-
-      <div class="manage-column">
-        <div id="serversPanel" class="panel">
-          <h4>Servers (cloud)</h4>
-          <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input id="newServerInput" placeholder="New server name" style="flex:1; padding:6px;" />
-            <button id="addServerBtn" style="padding:6px 8px;">Add</button>
-          </div>
-          <ul id="serversList" aria-live="polite"></ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Left DM panel and Right Server selection panel (hidden until login) -->
-  <div id="dmPanel" class="side-panel" aria-hidden="true">
-    <h4>Direct Messages</h4>
-    <ul id="dmList"></ul>
-  </div>
-
-  <div id="serverSelectPanel" class="side-panel" aria-hidden="true">
-    <h4>Servers</h4>
-    <ul id="serverSelectList"></ul>
-  </div>
-
-  <div class="page-inner" id="pageInner" style="display:none;">
-    <!-- How To Use and Manage buttons -->
+  <div class="page-inner">
+    <!-- How To Use button -->
     <button id="howBtn">How To Use</button>
-    <button id="manageBtn">Account &amp; Server Management</button>
 
-    <br style="clear:both;margin-top:44px;">
+    <!-- Account & Server Management button (admin only) -->
+    <button id="managementBtn">Account & Server Management</button>
 
     <!-- Message history -->
     <div id="messages" aria-live="polite"></div>
@@ -595,9 +627,50 @@
     <button id="clearBtn" title="Only Administrator may clear history">Clear Message History</button>
   </div>
 
-  <!-- Sign Out and Change Password (top-right) -->
+  <!-- Sign Out button (top-right) -->
   <button id="signOutBtn" title="Sign out">Sign Out</button>
+  <!-- Change Password button (left of Sign Out) - blue -->
   <button id="changePwBtn" title="Change your password">Change Password</button>
+
+  <!-- Management backdrop (for admin panels) -->
+  <div id="managementBackdrop">
+    <div id="managementContainer">
+      <!-- Admin panel -->
+      <div id="adminPanel">
+        <h4>Accounts (cloud)</h4>
+        <div style="display:flex; gap:8px;">
+          <input id="newAccountInput" placeholder="New account name" style="flex:1; padding:6px;" />
+          <button id="addAccountBtn" style="padding:6px 8px;">Add</button>
+        </div>
+        <ul id="accountsList" aria-live="polite"></ul>
+      </div>
+
+      <!-- Servers panel -->
+      <div id="serversPanel">
+        <h4>Servers (cloud)</h4>
+        <!-- ADMIN: add server input -->
+        <div id="newServerRow" style="display:flex; gap:8px; margin-bottom:8px;">
+          <input id="newServerInput" placeholder="New server name" style="flex:1; padding:6px;" />
+          <button id="addServerBtn" style="padding:6px 8px;">Add</button>
+        </div>
+
+        <!-- servers list -->
+        <ul id="serversList" aria-live="polite"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- DM Panel (left side) -->
+  <div id="dmPanel">
+    <div class="panel-title">Direct Messages</div>
+    <div id="dmAccountsList"></div>
+  </div>
+
+  <!-- Servers Selection Panel (right side) -->
+  <div id="serversSelectionPanel">
+    <div class="panel-title">Servers</div>
+    <div id="serversSelectList"></div>
+  </div>
 
   <!-- Change password modal -->
   <div id="pwBackdrop" class="pw-backdrop" role="dialog" aria-modal="true" style="display:none; align-items:center; justify-content:center;">
@@ -617,21 +690,44 @@
     </div>
   </div>
 
+  <!-- Server create/edit modal -->
+  <div id="serverBackdrop" class="server-backdrop" role="dialog" aria-modal="true">
+    <div class="server-modal" role="document">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">Create Server</strong>
+        <button id="closeServerModal" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>
+      </div>
+      <div>
+        <label for="serverNameInput" style="font-weight:600;">Server name</label>
+        <input id="serverNameInput" placeholder="e.g. Project X" />
+      </div>
+      <div>
+        <label style="font-weight:600;">Include members</label>
+        <div class="members-list" id="membersList"></div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button id="createServerBtn" class="create-server-btn" disabled>Create Server</button>
+      </div>
+    </div>
+  </div>
+
   <!-- How To Use modal -->
-  <div id="howBackdrop" class="how-modal-backdrop" role="dialog" aria-modal="true" style="display:none;">
+  <div id="howBackdrop" class="how-modal-backdrop" role="dialog" aria-modal="true">
     <div class="how-modal" role="document">
       <button class="close" id="howClose" aria-label="Close">&times;</button>
       <h3>How To Use</h3>
       <ol>
-        <li><u>Administrator</u> creates accounts (Admin panel) and manages them in the cloud via Account & Server Management.</li>
+        <li><u>Administrator</u> creates accounts (Admin panel) and manages them in the cloud.</li>
         <li>Users sign in from the lock screen. If a password doesn't exist, they are prompted to create one.</li>
-        <li>Messages are sent as the currently logged-in account; there is no "From" selection anymore.</li>
+        <li>Messages are sent as the currently logged-in account.</li>
+        <li>Select DMs (left panel) or Servers (right panel) to chat with specific users or groups.</li>
       </ol>
+      <p>Thanks for using Message Board!</p>
     </div>
   </div>
 
-  <!-- Composer: fixed bottom (hidden until login) -->
-  <div class="composer" id="composer" role="region" aria-label="Message composer">
+  <!-- Composer: fixed bottom -->
+  <div class="composer" role="region" aria-label="Message composer">
     <div id="replyIndicator" class="reply-indicator" aria-hidden="true">
       <div id="replyIndicatorText"></div>
       <button id="cancelReplyBtn" class="cancel-reply">Cancel</button>
@@ -673,7 +769,6 @@
       updateDoc
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-    /* ---------------- Firebase config ---------------- */
     const firebaseConfig = {
       apiKey: "AIzaSyDP7gvu9KT8u37wNEFJ1BUPBBxGKiIUEo8",
       authDomain: "message-history-2d3ab.firebaseapp.com",
@@ -683,14 +778,26 @@
       appId: "1:258209489466:web:fae16998d2b8c161e6cb03",
       measurementId: "G-X3LTVS01X8"
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    /* ---------------- DOM references ---------------- */
+    // DOM refs
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const deleteCurrentBtn = document.getElementById('deleteCurrentBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const messagesDiv = document.getElementById('messages');
+
     const loginOverlay = document.getElementById('loginOverlay');
     const loginCard = document.querySelector('.login-card');
     const accountButtons = document.getElementById('accountButtons');
+    const pageInner = document.querySelector('.page-inner');
+    const newAccountInput = document.getElementById('newAccountInput');
+    const addAccountBtn = document.getElementById('addAccountBtn');
+    const accountsList = document.getElementById('accountsList');
     const avatarCircle = document.getElementById('avatarCircle');
+
     const passwordArea = document.getElementById('passwordArea');
     const pwPromptText = document.getElementById('pwPromptText');
     const enterPw = document.getElementById('enterPw');
@@ -704,14 +811,14 @@
     const cancelCreateBtn = document.getElementById('cancelCreateBtn');
     const loginHint = document.getElementById('loginHint');
     const pwErr = document.getElementById('pwErr');
+
     const splitTop = document.querySelector('.split-top');
     const splitBottom = document.querySelector('.split-bottom');
 
-    const pageInner = document.getElementById('pageInner');
-    const composer = document.getElementById('composer');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const deleteCurrentBtn = document.getElementById('deleteCurrentBtn');
+    const bootOverlay = document.getElementById('bootOverlay');
+    const bootBox = document.getElementById('bootBox');
+    const bootLogo = document.getElementById('bootLogo');
+
     const emojiBtn = document.getElementById('emojiBtn');
     const emojiPicker = document.getElementById('emojiPicker');
     const emojiGrid = document.getElementById('emojiGrid');
@@ -721,82 +828,72 @@
     const howBackdrop = document.getElementById('howBackdrop');
     const howClose = document.getElementById('howClose');
 
-    const manageBtn = document.getElementById('manageBtn');
-    const manageBackdrop = document.getElementById('manageBackdrop');
-    const closeManage = document.getElementById('closeManage');
-
-    const adminPanel = document.getElementById('adminPanel');
-    const serversPanel = document.getElementById('serversPanel');
-    const newAccountInput = document.getElementById('newAccountInput');
-    const addAccountBtn = document.getElementById('addAccountBtn');
-    const accountsList = document.getElementById('accountsList');
-    const newServerInput = document.getElementById('newServerInput');
-    const addServerBtn = document.getElementById('addServerBtn');
-    const serversList = document.getElementById('serversList');
-
-    const dmPanel = document.getElementById('dmPanel');
-    const dmList = document.getElementById('dmList');
-    const serverSelectPanel = document.getElementById('serverSelectPanel');
-    const serverSelectList = document.getElementById('serverSelectList');
-
     const signOutBtn = document.getElementById('signOutBtn');
     const changePwBtn = document.getElementById('changePwBtn');
+
     const pwBackdrop = document.getElementById('pwBackdrop');
     const cpCurrent = document.getElementById('cpCurrent');
     const cpNew = document.getElementById('cpNew');
     const cpNewRetype = document.getElementById('cpNewRetype');
-    const cpSaveBtn = document.getElementById('cpSaveBtn') || document.getElementById('cpSaveBtn'); // safe ref
+    const cpSaveBtn = document.getElementById('cpSaveBtn');
     const cpCancelBtn = document.getElementById('cpCancelBtn');
     const closePwModal = document.getElementById('closePwModal');
     const pwMsg = document.getElementById('pwMsg');
 
-    const clearBtn = document.getElementById('clearBtn');
+    const replyIndicator = document.getElementById('replyIndicator');
+    const replyIndicatorText = document.getElementById('replyIndicatorText');
+    const cancelReplyBtn = document.getElementById('cancelReplyBtn');
 
-    /* ---------------- Cloud refs & constants ---------------- */
+    const serverBackdrop = document.getElementById('serverBackdrop');
+    const closeServerModal = document.getElementById('closeServerModal');
+    const serverNameInput = document.getElementById('serverNameInput');
+    const membersList = document.getElementById('membersList');
+    const createServerBtn = document.getElementById('createServerBtn');
+
+    const serversList = document.getElementById('serversList');
+    const newServerRow = document.getElementById('newServerRow');
+    const newServerInput = document.getElementById('newServerInput');
+    const addServerBtn = document.getElementById('addServerBtn');
+
+    const managementBtn = document.getElementById('managementBtn');
+    const managementBackdrop = document.getElementById('managementBackdrop');
+
+    const composer = document.querySelector('.composer');
+
+    const dmPanel = document.getElementById('dmPanel');
+    const dmAccountsList = document.getElementById('dmAccountsList');
+    const serversSelectionPanel = document.getElementById('serversSelectionPanel');
+    const serversSelectList = document.getElementById('serversSelectList');
+
+    // hide page until login
+    pageInner.style.display = 'none';
+
+    // cloud refs
     const accountsDocRef = doc(db, 'meta', 'accounts');
     const passwordsDocRef = doc(db, 'meta', 'passwords');
     const serversDocRef = doc(db, 'meta', 'servers');
     const ADMIN_NAME = 'Administrator';
 
-    /* ---------------- State ---------------- */
-    let currentUser = null;
-    let passwordFlow = { active:false, account:null, mode:null };
+    // caches & state
     let lastMessages = [];
-    let accountsCache = [];
-    let serversMap = {};
+    let pwChangeTarget = null;
     let replyTargetId = null;
     let replyTargetName = null;
-    // chatTarget: { type: 'main'|'user'|'server', name: null|string }
-    let chatTarget = { type: 'main', name: null };
+    let serversMap = {};
+    let accountsCache = [];
+    let activeChatTarget = 'Main Server'; // Can be 'Main Server', account name, or server name
+    let activeChatType = 'main'; // 'main', 'dm', or 'server'
 
-    /* ---------------- Helpers ---------------- */
+    // helper: SHA-256
     async function hashPassword(password) {
       const enc = new TextEncoder();
       const data = enc.encode(password);
       const hashBuffer = await crypto.subtle.digest('SHA-256', data);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    function formatTimestamp(ts) {
-      if (!ts) return '';
-      try { const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleString(); } catch(e){ return ''; }
-    }
-    function createTimestampRow(text) {
-      const r = document.createElement('div'); r.className = 'timestamp-row';
-      const l = document.createElement('div'); l.className = 'line';
-      const t = document.createElement('div'); t.className = 'timestamp-text'; t.textContent = text || '';
-      const r2 = document.createElement('div'); r2.className = 'line';
-      r.appendChild(l); r.appendChild(t); r.appendChild(r2);
-      return r;
-    }
-
-    const colors = ['rgba(0,180,0,0.85)','rgba(255,165,0,0.95)','rgba(220,20,60,0.95)','rgba(128,0,128,0.95)','rgba(255,0,255,0.95)'];
-    function hashStringToIndex(s, mod) { let h=5381; for(let i=0;i<s.length;i++){ h=((h<<5)+h)+s.charCodeAt(i); h=h&0xffffffff; } return Math.abs(h)%mod; }
-    function colorForName(name){ return colors[hashStringToIndex((name||'').toLowerCase(), colors.length)]; }
-
-    /* ---------------- Ensure Administrator exists ---------------- */
-    (async function ensureAdminPresent(){
+    (async function ensureAdminPresent() {
       try {
         const snap = await getDoc(accountsDocRef);
         if (!snap.exists()) {
@@ -809,425 +906,538 @@
             await setDoc(accountsDocRef, { list: updated }, { merge: true });
           }
         }
-      } catch(e) {
-        console.warn('ensureAdminPresent failed:', e?.message || e);
+      } catch (err) {
+        console.warn("Could not ensure Administrator present:", err?.message);
       }
     })();
 
-    /* ---------------- Realtime listeners ---------------- */
+    // realtime accounts listener
     onSnapshot(accountsDocRef, snap => {
       const list = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+      populateAccounts(list);
+    }, err => {
+      console.error('Accounts listener error:', err);
+      populateAccounts([]);
+    });
+
+    // listen for servers changes
+    onSnapshot(serversDocRef, snap => {
+      const data = snap.exists() ? (snap.data().map || {}) : {};
+      serversMap = Object.assign({}, data);
+      populateServersFor(currentUser);
+      populateSidePanels();
+    }, err => {
+      console.warn('Servers listener error:', err);
+      serversMap = {};
+      populateServersFor(currentUser);
+      populateSidePanels();
+    });
+
+    function populateAccounts(list) {
+      accountButtons.innerHTML = "";
+      const safeList = Array.isArray(list) ? list.slice() : [];
+      if (safeList.length === 0) {
+        appendAccountButton(ADMIN_NAME);
+      } else {
+        if (!safeList.includes(ADMIN_NAME)) safeList.unshift(ADMIN_NAME);
+        const seen = new Set(), unique = [];
+        for (const n of safeList) {
+          if (!seen.has(n)) { seen.add(n); unique.push(n); }
+        }
+        unique.forEach(name => appendAccountButton(name));
+      }
+
       accountsCache = Array.isArray(list) ? list.slice() : [];
       if (!accountsCache.includes(ADMIN_NAME)) accountsCache.unshift(ADMIN_NAME);
-      populateAccountButtons(accountsCache);
-      populateManageAccounts(accountsCache);
-      renderDMPanel();
-    }, err => {
-      console.error('accounts listener', err);
-      accountsCache = [ADMIN_NAME];
-      populateAccountButtons(accountsCache);
-      populateManageAccounts(accountsCache);
-      renderDMPanel();
-    });
 
-    onSnapshot(serversDocRef, snap => {
-      const map = snap.exists() ? (snap.data().map || {}) : {};
-      serversMap = Object.assign({}, map);
-      populateManageServers(serversMap);
-      renderServerPanel();
-    }, err => {
-      console.warn('servers listener', err);
-      serversMap = {};
-      populateManageServers(serversMap);
-      renderServerPanel();
-    });
+      // admin panel list
+      accountsList.innerHTML = "";
+      if (Array.isArray(list)) {
+        const ordered = list.includes(ADMIN_NAME) ? [ADMIN_NAME, ...list.filter(n => n !== ADMIN_NAME)] : list;
+        ordered.forEach(name => {
+          const li = document.createElement('li');
+          const label = document.createElement('span');
+          label.textContent = name;
 
-    const messagesCol = collection(db, 'messages');
-    const messagesQuery = query(messagesCol, orderBy('time','asc'));
-    onSnapshot(messagesQuery, snapshot => {
-      const msgs = [];
-      snapshot.forEach(d => {
-        const data = d.data();
-        msgs.push({
-          id: d.id,
-          name: data.name,
-          text: data.text || '',
-          time: data.time || null,
-          parentId: data.parentId || null,
-          dmTarget: data.dmTarget || null
+          const actionsRight = document.createElement('div');
+          actionsRight.style.display = 'flex';
+          actionsRight.style.gap = '8px';
+          actionsRight.style.alignItems = 'center';
+
+          if (name === ADMIN_NAME) {
+            const rm = document.createElement('button');
+            rm.className = 'remove-account disabled';
+            rm.textContent = 'Remove';
+            rm.disabled = true;
+            actionsRight.appendChild(rm);
+          } else {
+            const changeBtn = document.createElement('button');
+            changeBtn.className = 'change-account-pw';
+            changeBtn.textContent = 'Change Password';
+            changeBtn.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              if (currentUser !== ADMIN_NAME) {
+                alert('Only Administrator may change other account passwords.');
+                return;
+              }
+              pwChangeTarget = name;
+              cpCurrent.value = '';
+              cpNew.value = '';
+              cpNewRetype.value = '';
+              cpCurrent.style.display = 'none';
+              pwMsg.textContent = `Set a new password for ${name}.`;
+              pwBackdrop.style.display = 'flex';
+            });
+            actionsRight.appendChild(changeBtn);
+
+            const rm = document.createElement('button');
+            rm.className = 'remove-account';
+            rm.textContent = 'Remove';
+            rm.addEventListener('click', async () => {
+              if (!confirm(`Remove account "${name}" from cloud? This will remove it for everyone.`)) return;
+              try {
+                const snap = await getDoc(accountsDocRef);
+                const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+                const filtered = existing.filter(n => n !== name && n !== undefined && n !== null);
+                if (!filtered.includes(ADMIN_NAME)) filtered.unshift(ADMIN_NAME);
+                await setDoc(accountsDocRef, { list: filtered }, { merge: true });
+                try {
+                  const pwSnap = await getDoc(passwordsDocRef);
+                  if (pwSnap.exists()) {
+                    const map = pwSnap.data().map || {};
+                    if (map[name]) {
+                      delete map[name];
+                      await setDoc(passwordsDocRef, { map }, { merge: true });
+                    }
+                  }
+                } catch (e) { console.warn('Could not remove password entry:', e?.message); }
+              } catch (err) {
+                alert('Failed to remove account: ' + err.message);
+              }
+            });
+            actionsRight.appendChild(rm);
+          }
+
+          li.appendChild(label);
+          li.appendChild(actionsRight);
+          accountsList.appendChild(li);
         });
-      });
-      lastMessages = msgs;
-      renderMessages();
-    }, err => {
-      console.error('messages listener', err);
-    });
+      }
 
-    /* ---------------- Account buttons for login overlay ---------------- */
-    function populateAccountButtons(list) {
-      accountButtons.innerHTML = '';
-      const safe = Array.isArray(list) ? list.slice() : [];
-      if (safe.length === 0) safe.push(ADMIN_NAME);
-      if (!safe.includes(ADMIN_NAME)) safe.unshift(ADMIN_NAME);
+      populateSidePanels();
+      updateClearButtonState();
 
-      const seen = new Set();
-      for (const name of safe) {
-        if (!name || seen.has(name)) continue;
-        seen.add(name);
-        const b = document.createElement('button');
-        b.className = 'account-btn';
-        b.textContent = name;
-        b.addEventListener('mouseenter', ()=>{ if(!passwordFlow.active) avatarCircle.textContent = name.charAt(0).toUpperCase();});
-        b.addEventListener('mouseleave', ()=>{ if(!passwordFlow.active) avatarCircle.textContent = '';});
-        b.addEventListener('click', ()=> startPasswordFlowFor(name));
-        accountButtons.appendChild(b);
+      if (loginOverlay.style.display !== 'none' && accountButtons.style.visibility !== 'hidden') {
+        splitTop.style.display = '';
+        splitBottom.style.display = '';
+        void loginCard.offsetWidth;
+        loginCard.classList.add('split-open');
+        loginCard.classList.add('scale-in');
+        setTimeout(() => {
+          splitTop.style.display = 'none';
+          splitBottom.style.display = 'none';
+          loginCard.classList.remove('split-open');
+        }, 3000);
       }
     }
 
-    /* ---------------- Password flow (login) ---------------- */
+    function appendAccountButton(name) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'account-btn';
+      b.textContent = name;
+
+      b.addEventListener('mouseenter', () => {
+        if (!passwordFlow.active) {
+          const ch = (name && typeof name === 'string') ? name.trim().charAt(0).toUpperCase() : '';
+          avatarCircle.textContent = ch;
+        }
+      });
+      b.addEventListener('mouseleave', () => {
+        if (!passwordFlow.active) avatarCircle.textContent = '';
+      });
+
+      b.addEventListener('click', () => startPasswordFlowFor(name));
+      accountButtons.appendChild(b);
+    }
+
+    addAccountBtn.addEventListener('click', async () => {
+      const v = (newAccountInput.value || "").trim();
+      if (!v) return;
+      if (v === ADMIN_NAME) {
+        alert('Administrator already always exists.');
+        newAccountInput.value = '';
+        return;
+      }
+      try {
+        const snap = await getDoc(accountsDocRef);
+        const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
+        if (existing.includes(v)) {
+          alert('Account already exists.');
+          return;
+        }
+        const updated = existing.includes(ADMIN_NAME) ? [...existing, v] : [ADMIN_NAME, ...existing, v];
+        await setDoc(accountsDocRef, { list: updated }, { merge: true });
+        newAccountInput.value = '';
+      } catch (err) {
+        alert('Failed to add account: ' + err.message);
+      }
+    });
+
+    // login & password flow
+    let currentUser = null;
+    const passwordFlow = { active: false, account: null, mode: null };
+
     async function startPasswordFlowFor(accountName) {
-      passwordFlow.active = true; passwordFlow.account = accountName; passwordFlow.mode = null;
+      passwordFlow.active = true;
+      passwordFlow.account = accountName;
+      passwordFlow.mode = null;
+
       accountButtons.style.display = 'none';
       passwordArea.style.display = 'flex';
+      passwordArea.setAttribute('aria-hidden', 'false');
+
+      loginHint.textContent = '';
+      avatarCircle.textContent = (accountName && typeof accountName === 'string') ? accountName.trim().charAt(0).toUpperCase() : '';
       pwPromptText.textContent = `Sign in as ${accountName}`;
-      pwErr.style.display = 'none'; pwErr.textContent = '';
-      avatarCircle.textContent = accountName.charAt(0).toUpperCase();
+
+      pwErr.style.display = 'none';
+      pwErr.textContent = '';
+      passwordInput.classList.remove('input-error');
 
       try {
-        const snap = await getDoc(passwordsDocRef);
-        const map = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        const pwSnap = await getDoc(passwordsDocRef);
+        const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
         if (map && map[accountName]) {
           passwordFlow.mode = 'enter';
-          enterPw.style.display = 'flex'; createPw.style.display = 'none';
-          passwordInput.value = ''; passwordInput.focus();
+          enterPw.style.display = 'flex';
+          createPw.style.display = 'none';
+          passwordInput.value = '';
+          passwordInput.focus();
         } else {
           passwordFlow.mode = 'create';
-          enterPw.style.display = 'none'; createPw.style.display = 'flex';
-          newPasswordInput.value=''; newPasswordRetype.value=''; newPasswordInput.focus();
+          enterPw.style.display = 'none';
+          createPw.style.display = 'flex';
+          newPasswordInput.value = '';
+          newPasswordRetype.value = '';
+          newPasswordInput.focus();
         }
-      } catch(e){
+      } catch (err) {
         passwordFlow.mode = 'create';
-        enterPw.style.display = 'none'; createPw.style.display = 'flex';
+        enterPw.style.display = 'none';
+        createPw.style.display = 'flex';
       }
     }
 
     function endPasswordFlow() {
-      passwordFlow.active = false; passwordFlow.account = null; passwordFlow.mode = null;
+      passwordFlow.active = false;
+      passwordFlow.account = null;
+      passwordFlow.mode = null;
+
       passwordArea.style.display = 'none';
+      passwordArea.setAttribute('aria-hidden', 'true');
       accountButtons.style.display = 'flex';
       avatarCircle.textContent = '';
+      loginHint.textContent = 'Click/Press your account to sign in';
       pwPromptText.textContent = '';
-      pwErr.style.display = 'none'; pwErr.textContent = '';
+
+      pwErr.style.display = 'none';
+      pwErr.textContent = '';
+      passwordInput.classList.remove('input-error');
     }
 
-    cancelPwBtn.addEventListener('click', endPasswordFlow);
-    cancelCreateBtn.addEventListener('click', endPasswordFlow);
+    document.getElementById('cancelPwBtn').addEventListener('click', endPasswordFlow);
+    document.getElementById('cancelCreateBtn').addEventListener('click', endPasswordFlow);
 
-    createPwBtn.addEventListener('click', async ()=> {
-      const p1 = (newPasswordInput.value||'').trim();
-      const p2 = (newPasswordRetype.value||'').trim();
-      if(!p1||!p2){ alert('Enter and retype password'); return; }
-      if(p1!==p2){ alert('Passwords do not match'); return; }
+    document.getElementById('createPwBtn').addEventListener('click', async () => {
+      const p1 = (newPasswordInput.value || '').trim();
+      const p2 = (newPasswordRetype.value || '').trim();
+      if (!p1 || !p2) { alert('Please enter and retype the new password.'); return; }
+      if (p1 !== p2) { alert('Passwords do not match.'); return; }
       const acct = passwordFlow.account;
       try {
         const hashed = await hashPassword(p1);
         const snap = await getDoc(passwordsDocRef);
-        const map = (snap.exists() && snap.data().map) ? snap.data().map : {};
-        map[acct] = hashed;
-        await setDoc(passwordsDocRef, { map }, { merge: true });
-        finishLoginSequence(acct);
-      } catch(e){ alert('Failed to set password: '+(e.message||e)); }
+        const existingMap = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        existingMap[acct] = hashed;
+        await setDoc(passwordsDocRef, { map: existingMap }, { merge: true });
+        startBootSequence(acct);
+      } catch (err) {
+        alert('Failed to set password: ' + (err.message || err));
+      }
     });
 
-    submitPwBtn.addEventListener('click', async ()=>{
-      const p = (passwordInput.value||'').trim();
-      if(!p){ pwErr.style.display='block'; pwErr.textContent='Please enter your password'; passwordInput.focus(); return; }
+    submitPwBtn.addEventListener('click', async () => {
+      const p = (passwordInput.value || '').trim();
+      if (!p) {
+        pwErr.textContent = 'Please enter your password';
+        pwErr.style.display = 'block';
+        passwordInput.classList.add('input-error');
+        passwordInput.focus();
+        return;
+      }
       const acct = passwordFlow.account;
       try {
         const hashed = await hashPassword(p);
-        const snap = await getDoc(passwordsDocRef);
-        const map = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        const pwSnap = await getDoc(passwordsDocRef);
+        const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
         const stored = map[acct] || null;
-        if (!stored) { passwordFlow.mode = 'create'; enterPw.style.display='none'; createPw.style.display='flex'; return; }
-        if (hashed === stored) { finishLoginSequence(acct); } else { pwErr.style.display='block'; pwErr.textContent='Incorrect password'; passwordInput.focus(); return; }
-      } catch(e){ alert('Failed to verify password: '+(e.message||e)); }
+        if (!stored) {
+          passwordFlow.mode = 'create';
+          enterPw.style.display = 'none';
+          createPw.style.display = 'flex';
+          return;
+        }
+        if (hashed === stored) {
+          pwErr.style.display = 'none';
+          pwErr.textContent = '';
+          passwordInput.classList.remove('input-error');
+          startBootSequence(acct);
+        } else {
+          pwErr.textContent = `Incorrect password for ${acct}`;
+          pwErr.style.display = 'block';
+          passwordInput.classList.add('input-error');
+          passwordInput.focus();
+          return;
+        }
+      } catch (err) {
+        alert('Failed to verify password: ' + (err.message || err));
+      }
     });
 
-    /* ---------------- Boot/login visual sequence then finish login ---------------- */
-    function finishLoginSequence(accountName) {
-      // keep login overlay active while boot animation runs
+    passwordInput.addEventListener('input', () => {
+      if (pwErr.style.display === 'block') {
+        pwErr.style.display = 'none';
+        pwErr.textContent = '';
+        passwordInput.classList.remove('input-error');
+      }
+    });
+
+    passwordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitPwBtn.click();
+      }
+    });
+
+    async function startBootSequence(accountName) {
       loginCard.classList.add('fade-out');
 
       setTimeout(async () => {
         loginCard.style.visibility = 'hidden';
-        // show boot overlay
-        const bootOverlay = document.getElementById('bootOverlay');
-        const bootBox = document.getElementById('bootBox');
         bootOverlay.style.display = 'flex';
-        requestAnimationFrame(()=> bootBox.classList.add('show'));
+        requestAnimationFrame(() => bootBox.classList.add('show'));
 
-        // simulate small setup (non-blocking)
-        setTimeout(()=> {
+        (async function hiddenSetup() {
+          try {
+            await getDocs(query(collection(db, 'messages'), orderBy('time', 'asc')));
+          } catch (e) {
+            console.warn('Hidden setup failed (ignored).');
+          }
+        })();
+
+        setTimeout(() => {
           bootBox.classList.remove('show');
-          setTimeout(()=> {
+          setTimeout(() => {
             bootOverlay.style.display = 'none';
             loginOverlay.style.display = 'none';
             finishLoginAs(accountName);
             loginCard.style.visibility = '';
             loginCard.classList.remove('fade-out');
           }, 450);
-        }, 1200);
-      }, 360);
+        }, 3000);
+      }, 460);
     }
 
     function finishLoginAs(accountName) {
       currentUser = accountName;
-      // show page
       pageInner.style.display = '';
-      // composer visible now (ONLY after login)
+      
+      // Show composer after login
       composer.style.display = 'flex';
 
-      // show manage button only for admin
-      manageBtn.style.display = (currentUser === ADMIN_NAME) ? 'inline-block' : 'none';
+      // Show side panels
+      dmPanel.style.display = 'block';
+      serversSelectionPanel.style.display = 'block';
 
-      // show sign out and change password buttons
+      if (currentUser === ADMIN_NAME) {
+        managementBtn.style.display = 'inline-block';
+      } else {
+        managementBtn.style.display = 'none';
+      }
+
+      messageInput.focus();
+
+      passwordArea.style.display = 'none';
+      accountButtons.style.display = 'flex';
+      passwordFlow.active = false;
+      passwordFlow.account = null;
+      passwordFlow.mode = null;
+      avatarCircle.textContent = '';
+      loginHint.textContent = 'Click/Press your account to sign in';
+      pwPromptText.textContent = '';
+
       signOutBtn.style.display = 'inline-block';
       changePwBtn.style.display = 'inline-block';
 
-      // DM and server side panels shown now
-      dmPanel.classList.add('open'); dmPanel.style.display = 'block'; dmPanel.setAttribute('aria-hidden','false');
-      serverSelectPanel.classList.add('open'); serverSelectPanel.style.display = 'block'; serverSelectPanel.setAttribute('aria-hidden','false');
-
-      // Ensure admin DOES NOT show accounts/servers inline (they will be shown only in manage modal)
-      // The adminPanel and serversPanel DOM nodes live inside the manage modal initially, so page remains free.
-
       updateClearButtonState();
-      renderDMPanel();
-      renderServerPanel();
-      renderMessages();
+
       populateServersFor(currentUser);
+      populateSidePanels();
+
+      // Default to Main Server
+      activeChatTarget = 'Main Server';
+      activeChatType = 'main';
+      updateActivePanelStates();
+
+      renderMessages(lastMessages);
     }
 
-    /* ---------------- Sign out ---------------- */
     function signOut() {
-      if (!confirm('Sign out?')) return;
       currentUser = null;
-      // hide composer & panels
-      composer.style.display = 'none';
-      dmPanel.classList.remove('open'); dmPanel.setAttribute('aria-hidden','true'); dmPanel.style.display = 'none';
-      serverSelectPanel.classList.remove('open'); serverSelectPanel.setAttribute('aria-hidden','true'); serverSelectPanel.style.display = 'none';
 
-      manageBtn.style.display = 'none';
+      pageInner.classList.add('fade-out');
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
+      managementBtn.style.display = 'none';
+      
+      // Hide composer on logout
+      composer.style.display = 'none';
 
-      // close manage modal if open
-      manageBackdrop.style.display = 'none';
+      // Hide side panels
+      dmPanel.style.display = 'none';
+      serversSelectionPanel.style.display = 'none';
 
-      // show login overlay
-      loginOverlay.style.display = 'flex';
-      // reset chat target and render messages for main page (but overlay covers)
-      chatTarget = { type: 'main', name: null };
-      renderMessages();
+      setTimeout(() => {
+        pageInner.style.display = 'none';
+        pageInner.classList.remove('fade-out');
+
+        loginOverlay.style.display = 'flex';
+        loginCard.style.visibility = '';
+        loginCard.classList.remove('fade-out');
+        loginCard.classList.remove('split-open');
+        loginCard.classList.remove('scale-in');
+
+        splitTop.style.display = '';
+        splitBottom.style.display = '';
+        accountButtons.style.visibility = 'visible';
+        accountButtons.classList.remove('fade-out');
+        accountButtons.classList.add('fade-in');
+
+        requestAnimationFrame(() => {
+          loginCard.classList.add('scale-in');
+          void loginCard.offsetWidth;
+          loginCard.classList.add('split-open');
+        });
+
+        setTimeout(() => {
+          splitTop.style.display = 'none';
+          splitBottom.style.display = 'none';
+          loginCard.classList.remove('split-open');
+        }, 3000);
+
+        passwordArea.style.display = 'none';
+
+        avatarCircle.textContent = '';
+        loginHint.textContent = 'Click/Press your account to sign in';
+        pwPromptText.textContent = '';
+
+        renderMessages(lastMessages);
+      }, 420);
     }
-    signOutBtn.addEventListener('click', ()=> {
+
+    signOutBtn.addEventListener('click', () => {
       if (!confirm('Sign out?')) return;
       signOut();
     });
 
-    /* ---------------- Change password modal handling ---------------- */
-    changePwBtn.addEventListener('click', ()=> {
-      if (!currentUser) { alert('No user'); return; }
-      // open change password modal (reuse pwBackdrop)
+    changePwBtn.addEventListener('click', () => {
+      if (!currentUser) {
+        alert('No user signed in.');
+        return;
+      }
+      pwChangeTarget = currentUser;
       cpCurrent.value = '';
       cpNew.value = '';
       cpNewRetype.value = '';
+      cpCurrent.style.display = '';
       pwMsg.textContent = 'Enter your current password and a new password.';
       pwBackdrop.style.display = 'flex';
     });
-    cpCancelBtn.addEventListener('click', ()=> { pwBackdrop.style.display = 'none'; });
-    closePwModal.addEventListener('click', ()=> { pwBackdrop.style.display = 'none'; });
+    cpCancelBtn.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
+    closePwModal.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
 
-    // save password change
-    document.getElementById('cpSaveBtn')?.addEventListener('click', async () => {
+    cpSaveBtn.addEventListener('click', async () => {
       if (!currentUser) { alert('No user signed in.'); return; }
-      const oldp = (cpCurrent.value||'').trim();
-      const newp = (cpNew.value||'').trim();
-      const newp2 = (cpNewRetype.value||'').trim();
-      if (!newp || !newp2) { alert('Enter new password and retype.'); return; }
+      const target = pwChangeTarget || currentUser;
+      if (target !== currentUser && currentUser !== ADMIN_NAME) {
+        alert('Only Administrator may change other account passwords.');
+        return;
+      }
+
+      const oldp = (cpCurrent.value || '').trim();
+      const newp = (cpNew.value || '').trim();
+      const newp2 = (cpNewRetype.value || '').trim();
+      if (!newp || !newp2) { alert('Enter the new password and retype it.'); return; }
       if (newp !== newp2) { alert('New passwords do not match.'); return; }
+
       try {
         const pwSnap = await getDoc(passwordsDocRef);
         const map = (pwSnap.exists() && pwSnap.data().map) ? pwSnap.data().map : {};
-        const stored = map[currentUser] || null;
-        if (stored) {
+        const stored = map[target] || null;
+
+        if (target === currentUser && stored) {
           if (!oldp) { alert('Enter current password.'); return; }
           const oldHash = await hashPassword(oldp);
           if (oldHash !== stored) { alert('Current password incorrect.'); return; }
         }
+
         const newHash = await hashPassword(newp);
-        map[currentUser] = newHash;
+        map[target] = newHash;
         await setDoc(passwordsDocRef, { map }, { merge: true });
         alert('Password updated.');
         pwBackdrop.style.display = 'none';
-      } catch(e){ alert('Failed to change password: '+(e.message||e)); }
-    });
-
-    /* ---------------- Admin Manage modal open/close ---------------- */
-    manageBtn.addEventListener('click', ()=> {
-      if (currentUser !== ADMIN_NAME) return;
-      manageBackdrop.style.display = 'flex';
-      // panels live inside the modal already (we built them in DOM in the modal)
-      populateManageAccounts(accountsCache);
-      populateManageServers(serversMap);
-    });
-    closeManage.addEventListener('click', ()=> { manageBackdrop.style.display='none'; });
-
-    /* ---------------- How modal ---------------- */
-    howBtn.addEventListener('click', ()=> { howBackdrop.style.display = 'flex'; });
-    howClose.addEventListener('click', ()=> { howBackdrop.style.display = 'none'; });
-    howBackdrop.addEventListener('click', (ev)=> { if (ev.target === howBackdrop) howBackdrop.style.display='none'; });
-
-    /* ---------------- Accounts management (inside modal) ---------------- */
-    addAccountBtn.addEventListener('click', async ()=> {
-      const v = (newAccountInput.value||'').trim();
-      if (!v) return;
-      if (v === ADMIN_NAME) { alert('Administrator exists'); newAccountInput.value=''; return; }
-      try {
-        const snap = await getDoc(accountsDocRef);
-        const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-        if (existing.includes(v)) { alert('Account exists'); return; }
-        const updated = existing.includes(ADMIN_NAME) ? [...existing, v] : [ADMIN_NAME, ...existing, v];
-        await setDoc(accountsDocRef, { list: updated }, { merge: true });
-        newAccountInput.value = '';
-      } catch(e){ alert('Failed to add account: '+(e.message||e)); }
-    });
-
-    function populateManageAccounts(list) {
-      accountsList.innerHTML = '';
-      const arr = Array.isArray(list) ? list.slice() : [];
-      if (!arr.includes(ADMIN_NAME)) arr.unshift(ADMIN_NAME);
-      for (const name of arr) {
-        const li = document.createElement('li');
-        const label = document.createElement('span'); label.textContent = name;
-        const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px';
-        if (name === ADMIN_NAME) {
-          const rm = document.createElement('button'); rm.className='remove-account disabled'; rm.textContent='Remove'; rm.disabled=true;
-          actions.appendChild(rm);
-        } else {
-          const changeBtn = document.createElement('button'); changeBtn.className='change-account-pw'; changeBtn.textContent='Change Password';
-          changeBtn.addEventListener('click', ()=> {
-            if (currentUser !== ADMIN_NAME) { alert('Only admin'); return; }
-            const newpw = prompt(`Set a new password for ${name}:`,'');
-            (async ()=> {
-              if (!newpw) return;
-              try {
-                const snap = await getDoc(passwordsDocRef);
-                const map = (snap.exists() && snap.data().map) ? snap.data().map : {};
-                map[name] = await hashPassword(newpw);
-                await setDoc(passwordsDocRef, { map }, { merge: true });
-                alert('Password set.');
-              } catch(e){ alert('Failed to set pw: '+(e.message||e)); }
-            })();
-          });
-          actions.appendChild(changeBtn);
-
-          const rm = document.createElement('button'); rm.className='remove-account'; rm.textContent='Remove';
-          rm.addEventListener('click', async ()=> {
-            if (!confirm(`Remove account "${name}"?`)) return;
-            try {
-              const snap = await getDoc(accountsDocRef);
-              const existing = (snap.exists() && Array.isArray(snap.data().list)) ? snap.data().list : [];
-              const filtered = existing.filter(n => n !== name && n !== undefined && n !== null);
-              if (!filtered.includes(ADMIN_NAME)) filtered.unshift(ADMIN_NAME);
-              await setDoc(accountsDocRef, { list: filtered }, { merge: true });
-            } catch(e){ alert('Failed to remove account: '+(e.message||e)); }
-          });
-          actions.appendChild(rm);
-        }
-        li.appendChild(label); li.appendChild(actions);
-        accountsList.appendChild(li);
+        pwChangeTarget = null;
+        cpCurrent.style.display = '';
+      } catch (err) {
+        alert('Failed to change password: ' + (err.message || err));
       }
-    }
-
-    /* ---------------- Servers management (inside modal) ---------------- */
-    addServerBtn.addEventListener('click', async ()=> {
-      if (currentUser !== ADMIN_NAME) return alert('Only admin may add server here.');
-      const name = (newServerInput.value||'').trim();
-      if (!name) return;
-      try {
-        const snap = await getDoc(serversDocRef);
-        const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-        if (existing[name]) { alert('Server exists'); return; }
-        existing[name] = { members: [ADMIN_NAME], creator: ADMIN_NAME };
-        await setDoc(serversDocRef, { map: existing }, { merge: true });
-        newServerInput.value = '';
-      } catch(e){ alert('Failed to add server: '+(e.message||e)); }
     });
 
-    function populateManageServers(map) {
-      serversList.innerHTML = '';
-      const names = Object.keys(map || {}).sort();
-      for (const s of names) {
-        const sd = normalizeServerData(s);
-        const creator = sd.creator || null;
-        const li = document.createElement('li');
-        const label = document.createElement('span'); label.textContent = s;
-        const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px';
-        // Edit button uses same style as change-account-pw per request
-        const editBtn = document.createElement('button'); editBtn.className = 'change-account-pw'; editBtn.textContent = 'Edit';
-        editBtn.addEventListener('click', async ()=> {
-          const newName = prompt('Enter new server name (leave blank to cancel):', s);
-          if (!newName || newName.trim() === '' || newName === s) return;
-          const newTrim = newName.trim();
-          try {
-            const snap = await getDoc(serversDocRef);
-            const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-            if (existing[newTrim]) { alert('A server with that name already exists.'); return; }
-            existing[newTrim] = existing[s];
-            delete existing[s];
-            await setDoc(serversDocRef, { map: existing }, { merge: true });
-            try {
-              // update messages referencing old server name
-              const msgsSnap = await getDocs(collection(db,'messages'));
-              const updates = [];
-              msgsSnap.forEach(md => {
-                const data = md.data();
-                if (data && data.dmTarget === s) updates.push(updateDoc(doc(db,'messages', md.id), { dmTarget: newTrim }));
-              });
-              if (updates.length) await Promise.all(updates);
-            } catch (e2) { console.warn('Failed update msgs after rename'); }
-          } catch(e){ alert('Rename failed: '+(e.message||e)); }
-        });
-        actions.appendChild(editBtn);
+    // Management button (admin only)
+    managementBtn.addEventListener('click', () => {
+      managementBackdrop.style.display = 'flex';
+    });
 
-        const del = document.createElement('button'); del.className='remove-account'; del.textContent='Delete';
-        del.addEventListener('click', async ()=> {
-          if (!confirm(`Delete server "${s}"?`)) return;
-          try {
-            const snap = await getDoc(serversDocRef);
-            const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-            if (existing[s]) delete existing[s];
-            await setDoc(serversDocRef, { map: existing }, { merge: true });
-            try {
-              const msgsSnap = await getDocs(collection(db,'messages'));
-              const updates = [];
-              msgsSnap.forEach(md => {
-                const data = md.data();
-                if (data && data.dmTarget === s) updates.push(updateDoc(doc(db,'messages', md.id), { dmTarget: null }));
-              });
-              if (updates.length) await Promise.all(updates);
-            } catch (e2) { console.warn('Failed clearing dmTarget after server delete'); }
-          } catch(e){ alert('Failed to delete server: '+(e.message||e)); }
-        });
-        actions.appendChild(del);
-
-        li.appendChild(label); li.appendChild(actions);
-        serversList.appendChild(li);
+    managementBackdrop.addEventListener('click', (e) => {
+      if (e.target === managementBackdrop) {
+        managementBackdrop.style.display = 'none';
       }
-    }
+    });
 
-    function normalizeServerData(serverName) {
+    const messagesCol = collection(db, 'messages');
+    const messagesQuery = query(messagesCol, orderBy('time', 'asc'));
+
+    onSnapshot(messagesQuery, snapshot => {
+      const msgs = [];
+      snapshot.forEach(docSnap => {
+        const d = docSnap.data();
+        msgs.push({
+          id: docSnap.id,
+          name: d.name,
+          text: d.text || "",
+          time: d.time || null,
+          parentId: d.parentId || null,
+          dmTarget: d.dmTarget || null
+        });
+      });
+      lastMessages = msgs;
+      renderMessages(msgs);
+    }, err => {
+      console.error("Realtime messages error:", err);
+    });
+
+    function getServerData(serverName) {
       const entry = serversMap && serversMap[serverName];
       if (!entry) return { members: [], creator: null };
       if (Array.isArray(entry)) return { members: entry.slice(), creator: null };
@@ -1239,78 +1449,31 @@
       return { members: [], creator: null };
     }
 
-    /* ---------------- Left DM panel & Right Server selection UI ---------------- */
-    function renderDMPanel() {
-      dmList.innerHTML = '';
-      const list = Array.isArray(accountsCache) ? accountsCache.slice() : [];
-      for (const name of list) {
-        if (!name) continue;
-        if (currentUser && name === currentUser) continue;
-        const li = document.createElement('li');
-        li.dataset.name = name;
-        const label = document.createElement('span'); label.className = 'acct-name'; label.textContent = name;
-        li.appendChild(label);
-        li.addEventListener('click', ()=> {
-          chatTarget = { type: 'user', name };
-          highlightSelections();
-          renderMessages();
-        });
-        dmList.appendChild(li);
-      }
-      highlightSelections();
-    }
-
-    function renderServerPanel() {
-      serverSelectList.innerHTML = '';
-      const names = Object.keys(serversMap || {}).sort();
-      for (const s of names) {
-        const sd = normalizeServerData(s);
-        const members = sd.members || [];
-        if (currentUser !== ADMIN_NAME && !members.includes(currentUser)) continue;
-        const li = document.createElement('li'); li.dataset.name = s;
-        const label = document.createElement('span'); label.className='acct-name'; label.textContent = s;
-        li.appendChild(label);
-        li.addEventListener('click', ()=> {
-          chatTarget = { type: 'server', name: s };
-          highlightSelections();
-          renderMessages();
-        });
-        serverSelectList.appendChild(li);
-      }
-      highlightSelections();
-    }
-
-    function highlightSelections() {
-      const dmItems = dmList.querySelectorAll('li');
-      dmItems.forEach(li => li.classList.toggle('selected', chatTarget.type === 'user' && chatTarget.name === li.dataset.name));
-      const srvItems = serverSelectList.querySelectorAll('li');
-      srvItems.forEach(li => li.classList.toggle('selected', chatTarget.type === 'server' && chatTarget.name === li.dataset.name));
-    }
-
-    /* ---------------- Message rendering (uses chatTarget) ---------------- */
-    function renderMessages() {
-      messagesDiv.innerHTML = '';
-      if (!Array.isArray(lastMessages) || lastMessages.length === 0) return;
+    function renderMessages(messages) {
+      messagesDiv.innerHTML = "";
+      if (!Array.isArray(messages) || messages.length === 0) return;
 
       let visibleMessages = [];
-      if (!chatTarget || chatTarget.type === 'main') {
-        visibleMessages = lastMessages.filter(m => !m.dmTarget);
-      } else if (chatTarget.type === 'server') {
-        const sd = normalizeServerData(chatTarget.name);
-        const members = sd.members || [];
-        if (!currentUser || (!members.includes(currentUser) && currentUser !== ADMIN_NAME)) {
+      
+      if (activeChatType === 'main') {
+        visibleMessages = messages.filter(m => !m.dmTarget);
+      } else if (activeChatType === 'server') {
+        const sd = getServerData(activeChatTarget);
+        const members = sd.members;
+        if (!currentUser || !members.includes(currentUser)) {
           visibleMessages = [];
         } else {
-          visibleMessages = lastMessages.filter(m => m.dmTarget === chatTarget.name);
+          visibleMessages = messages.filter(m => m.dmTarget === activeChatTarget);
         }
-      } else if (chatTarget.type === 'user') {
-        if (!currentUser) visibleMessages = [];
-        else {
-          visibleMessages = lastMessages.filter(m => {
+      } else if (activeChatType === 'dm') {
+        if (!currentUser) {
+          visibleMessages = [];
+        } else {
+          visibleMessages = messages.filter(m => {
             if (!m.dmTarget) return false;
-            const sentBy = (m.name || '');
+            const sentBy = (m.name || "");
             const t = m.dmTarget;
-            return (t === chatTarget.name && sentBy === currentUser) || (t === currentUser && sentBy === chatTarget.name);
+            return (t === activeChatTarget && sentBy === currentUser) || (t === currentUser && sentBy === activeChatTarget);
           });
         }
       }
@@ -1331,42 +1494,83 @@
       const topTime = formatTimestamp(topLevel[0]?.time);
       messagesDiv.appendChild(createTimestampRow(topTime));
 
-      for (const m of topLevel) {
+      for (let i = 0; i < topLevel.length; i++) {
+        const m = topLevel[i] || {};
         const who = (m.name && String(m.name).trim()) ? String(m.name).trim() : 'Unknown';
         const text = (m.text && String(m.text)) ? m.text : '';
 
-        const row = document.createElement('div'); row.className = 'message-row';
-        const div = document.createElement('div'); div.className = 'message';
-        div.style.background = colorForName(who);
+        const row = document.createElement('div');
+        row.className = 'message-row';
+        row.style.position = 'relative';
 
-        const nameSpan = document.createElement('span'); nameSpan.className = 'name'; nameSpan.textContent = who + ':';
-        const contentSpan = document.createElement('span'); contentSpan.className = 'content'; contentSpan.textContent = ' ' + text;
-        div.appendChild(nameSpan); div.appendChild(contentSpan);
+        const div = document.createElement('div');
+        div.className = 'message';
+        try { div.style.background = colorForName(who); } catch (e) { div.style.background = 'rgba(0,0,0,0.45)'; }
 
-        const replyBtn = document.createElement('button'); replyBtn.type='button'; replyBtn.className='icon-btn reply-btn'; replyBtn.title='Reply'; replyBtn.innerHTML='↪';
-        replyBtn.addEventListener('click', (ev)=> {
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.textContent = who + ':';
+
+        const contentSpan = document.createElement('span');
+        contentSpan.className = 'content';
+        contentSpan.textContent = ' ' + text;
+
+        div.appendChild(nameSpan);
+        div.appendChild(contentSpan);
+
+        const replyBtn = document.createElement('button');
+        replyBtn.type = 'button';
+        replyBtn.className = 'icon-btn reply-btn';
+        replyBtn.title = 'Reply';
+        replyBtn.innerHTML = '↪';
+
+        replyBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
-          replyTargetId = m.id; replyTargetName = who;
+          replyTargetId = m.id;
+          replyTargetName = who;
           replyIndicatorText.textContent = `Replying to ${who}`;
           replyIndicator.style.display = 'flex';
-          replyIndicator.setAttribute('aria-hidden','false');
+          replyIndicator.setAttribute('aria-hidden', 'false');
           messageInput.focus();
         });
 
-        const actions = document.createElement('div'); actions.className = 'actions';
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
         const canAct = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+
         if (canAct) {
-          const trash = document.createElement('button'); trash.className='icon-btn trash'; trash.title='Delete message'; trash.innerHTML='🗑';
-          trash.addEventListener('click', async (ev)=> {
+          const trash = document.createElement('button');
+          trash.className = 'icon-btn trash';
+          trash.title = 'Delete message';
+          trash.innerHTML = '🗑';
+          trash.addEventListener('click', async (ev) => {
             ev.stopPropagation();
-            if (!confirm('Delete this message?')) return;
-            try { await deleteDoc(doc(db, 'messages', m.id)); } catch(e){ alert('Failed to delete: '+(e.message||e)); }
+            const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+            if (!allowedNow) { alert('Not allowed to delete this message.'); return; }
+            try {
+              await deleteDoc(doc(db, 'messages', m.id));
+              const snap = await getDocs(messagesQuery);
+              const deletes = [];
+              snap.forEach(snapDoc => {
+                const sd = snapDoc.data();
+                if (sd.parentId === m.id) deletes.push(deleteDoc(doc(db, 'messages', snapDoc.id)));
+              });
+              if (deletes.length) await Promise.all(deletes);
+            } catch (err) {
+              alert('Failed to delete message: ' + (err.message || err));
+            }
           });
           actions.appendChild(trash);
 
-          const edit = document.createElement('button'); edit.className='icon-btn pencil'; edit.title='Edit'; edit.innerHTML='✏';
-          edit.addEventListener('click', (ev)=> {
+          const edit = document.createElement('button');
+          edit.className = 'icon-btn pencil';
+          edit.title = 'Edit message';
+          edit.innerHTML = '✏';
+          edit.addEventListener('click', (ev) => {
             ev.stopPropagation();
+            const allowedNow = (currentUser === ADMIN_NAME) || (currentUser && currentUser === who);
+            if (!allowedNow) { alert('Not allowed to edit this message.'); return; }
             startEdit(row, div, contentSpan, m);
           });
           actions.appendChild(edit);
@@ -1378,15 +1582,17 @@
         messagesDiv.appendChild(row);
 
         const replies = repliesByParent[m.id] || [];
-        if (replies.length) {
-          const wrap = document.createElement('div'); wrap.className = 'replies-wrapper';
-          replies.sort((a,b)=> {
+        if (replies && replies.length > 0) {
+          replies.sort((a,b) => {
             const ta = a.time && a.time.toDate ? a.time.toDate().getTime() : (new Date(a.time || 0)).getTime();
             const tb = b.time && b.time.toDate ? b.time.toDate().getTime() : (new Date(b.time || 0)).getTime();
             return ta - tb;
           });
+          const wrap = document.createElement('div');
+          wrap.className = 'replies-wrapper';
           for (const r of replies) {
-            const el = document.createElement('div'); el.className = 'reply';
+            const el = document.createElement('div');
+            el.className = 'reply';
             const who2 = (r.name && String(r.name).trim()) ? r.name : 'Unknown';
             el.innerHTML = `<span class="r-name">${who2}:</span> ${String(r.text || '')}`;
             wrap.appendChild(el);
@@ -1394,107 +1600,454 @@
           messagesDiv.appendChild(wrap);
         }
       }
+    }
 
-      // keep view near bottom
-      setTimeout(()=>{ try{ messagesDiv.scrollTop = messagesDiv.scrollHeight; }catch(e){} }, 80);
+    function formatTimestamp(ts) {
+      if (!ts) return '';
+      try {
+        const d = ts.toDate ? ts.toDate() : new Date(ts);
+        return d.toLocaleString();
+      } catch (e) {
+        return '';
+      }
+    }
+    function createTimestampRow(text) {
+      const r = document.createElement('div');
+      r.className = 'timestamp-row';
+      const l = document.createElement('div'); l.className = 'line';
+      const t = document.createElement('div'); t.className = 'timestamp-text'; t.textContent = text || '';
+      const r2 = document.createElement('div'); r2.className = 'line';
+      r.appendChild(l);
+      r.appendChild(t);
+      r.appendChild(r2);
+      return r;
     }
 
     function startEdit(row, div, contentSpan, messageObj) {
       const parent = div.parentElement;
-      const ed = document.createElement('div'); ed.className = 'edit-area';
-      const ta = document.createElement('textarea'); ta.value = messageObj.text || '';
+      const ed = document.createElement('div');
+      ed.className = 'edit-area';
+      const ta = document.createElement('textarea');
+      ta.value = messageObj.text || '';
       ed.appendChild(ta);
-      const save = document.createElement('button'); save.className='icon-btn'; save.textContent='Save';
-      save.addEventListener('click', async (ev)=> {
+      const save = document.createElement('button');
+      save.className = 'icon-btn';
+      save.textContent = 'Save';
+      save.addEventListener('click', async (ev) => {
         ev.stopPropagation();
         try {
           await setDoc(doc(db, 'messages', messageObj.id), { name: messageObj.name, text: ta.value, time: messageObj.time, parentId: messageObj.parentId || null, dmTarget: messageObj.dmTarget || null }, { merge: true });
-        } catch (e) { alert('Failed to save edit: '+(e.message||e)); }
+        } catch (err) {
+          alert('Failed to save edit: ' + (err.message || err));
+        }
       });
       ed.appendChild(save);
-      const cancel = document.createElement('button'); cancel.className='icon-btn cancel-btn'; cancel.textContent='Cancel';
-      cancel.addEventListener('click', ()=> parent.replaceChild(div, ed));
+      const cancel = document.createElement('button');
+      cancel.className = 'icon-btn cancel-btn';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => {
+        parent.replaceChild(div, ed);
+      });
       ed.appendChild(cancel);
       parent.replaceChild(ed, div);
     }
 
-    /* ---------------- Composer behavior ---------------- */
-    sendBtn.addEventListener('click', addMessage);
-    messageInput.addEventListener('keydown', (e)=> { if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); addMessage(); } });
+    const colors = [
+      'rgba(0, 180, 0, 0.85)',
+      'rgba(255, 165, 0, 0.95)',
+      'rgba(220, 20, 60, 0.95)',
+      'rgba(128, 0, 128, 0.95)',
+      'rgba(255, 0, 255, 0.95)'
+    ];
+    function hashStringToIndex(s, mod) {
+      let h = 5381;
+      for (let i = 0; i < s.length; i++) {
+        h = ((h << 5) + h) + s.charCodeAt(i);
+        h = h & 0xffffffff;
+      }
+      return Math.abs(h) % mod;
+    }
+    function colorForName(name) {
+      const idx = hashStringToIndex((name||"").toLowerCase(), colors.length);
+      return colors[idx];
+    }
 
-    deleteCurrentBtn.addEventListener('click', ()=> {
+    async function enforceRetention() {
+      try {
+        const snap = await getDocs(messagesQuery);
+        const total = snap.size;
+        if (total > 100) {
+          const numToDelete = total - 10;
+          const docsToDelete = snap.docs.slice(0, numToDelete);
+          const deletes = docsToDelete.map(d => deleteDoc(doc(db, 'messages', d.id)));
+          await Promise.all(deletes);
+        }
+      } catch (err) {
+        console.error('Retention enforcement failed:', err);
+      }
+    }
+
+    sendBtn.addEventListener('click', addMessage);
+    messageInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        addMessage();
+      }
+    });
+
+    deleteCurrentBtn.addEventListener('click', () => {
       messageInput.value = '';
-      replyTargetId = null; replyTargetName = null;
-      replyIndicator.style.display = 'none'; replyIndicator.setAttribute('aria-hidden','true');
+      replyTargetId = null;
+      replyTargetName = null;
+      replyIndicator.style.display = 'none';
+      replyIndicator.setAttribute('aria-hidden', 'true');
       replyIndicatorText.textContent = '';
     });
 
     async function addMessage() {
-      if (!currentUser) { alert('Sign in first'); return; }
-      const text = (messageInput.value||'').trim();
-      if (!text) return;
+      if (!currentUser) { alert('No user signed in.'); return; }
+      const sendName = currentUser;
+      const text = (messageInput.value || "").trim();
+      if (!sendName || !text) return;
       try {
-        const payload = { name: currentUser, text, time: serverTimestamp() };
+        const payload = { name: sendName, text, time: serverTimestamp() };
         if (replyTargetId) payload.parentId = replyTargetId;
-        if (chatTarget && chatTarget.type === 'server') payload.dmTarget = chatTarget.name;
-        else if (chatTarget && chatTarget.type === 'user') payload.dmTarget = chatTarget.name;
-        // main server -> no dmTarget
-        await addDoc(collection(db,'messages'), payload);
-        messageInput.value = '';
-        replyTargetId = null; replyTargetName = null; replyIndicator.style.display='none';
-        setTimeout(()=>{ try{ messagesDiv.scrollTop = messagesDiv.scrollHeight; }catch(e){} }, 50);
-      } catch(e){ alert('Failed to send message: '+(e.message||e)); }
+
+        if (activeChatType === 'dm') {
+          payload.dmTarget = activeChatTarget;
+        } else if (activeChatType === 'server') {
+          payload.dmTarget = activeChatTarget;
+        }
+
+        await addDoc(collection(db, 'messages'), payload);
+        messageInput.value = "";
+        replyTargetId = null;
+        replyTargetName = null;
+        replyIndicator.style.display = 'none';
+        replyIndicator.setAttribute('aria-hidden', 'true');
+        replyIndicatorText.textContent = '';
+        await enforceRetention();
+
+        try { messagesDiv.scrollTop = messagesDiv.scrollHeight; } catch(e){}
+      } catch (err) {
+        alert("Failed to send message: " + err.message);
+      }
     }
 
-    cancelReplyBtn.addEventListener('click', ()=> {
-      replyTargetId = null; replyTargetName = null; replyIndicator.style.display='none';
+    cancelReplyBtn.addEventListener('click', () => {
+      replyTargetId = null;
+      replyTargetName = null;
+      replyIndicator.style.display = 'none';
+      replyIndicator.setAttribute('aria-hidden', 'true');
+      replyIndicatorText.textContent = '';
     });
 
-    /* ---------------- Emoji picker ---------------- */
+    function updateClearButtonState() {
+      if (currentUser === ADMIN_NAME) {
+        clearBtn.style.display = '';
+        clearBtn.disabled = false;
+        clearBtn.title = 'Clear all messages (Administrator only)';
+      } else {
+        clearBtn.style.display = 'none';
+        clearBtn.disabled = true;
+        clearBtn.title = '';
+      }
+    }
+
+    clearBtn.addEventListener('click', async () => {
+      if (currentUser !== ADMIN_NAME) {
+        alert('Only Administrator may clear message history.');
+        updateClearButtonState();
+        return;
+      }
+      try {
+        const snap = await getDocs(collection(db, 'messages'));
+        const deletes = [];
+        snap.forEach(d => deletes.push(deleteDoc(doc(db, 'messages', d.id))));
+        await Promise.all(deletes);
+      } catch (err) {
+        alert("Failed to clear messages: " + err.message);
+      }
+    });
+
     const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😜","😝","🫠","😎","🤓"];
     emojis.forEach(e => {
-      const btn = document.createElement('button'); btn.className='emoji-btn'; btn.type='button'; btn.textContent=e;
-      btn.addEventListener('click', ()=> { messageInput.value += e; emojiPicker.style.display='none'; messageInput.focus(); });
+      const btn = document.createElement('button');
+      btn.className = 'emoji-btn';
+      btn.type = 'button';
+      btn.textContent = e;
+      btn.addEventListener('click', () => {
+        messageInput.value += e;
+        emojiPicker.style.display = 'none';
+        messageInput.focus();
+      });
       emojiGrid.appendChild(btn);
     });
-    emojiBtn.addEventListener('click', ()=> { emojiPicker.style.display = (emojiPicker.style.display === 'block') ? 'none' : 'block'; });
-    document.addEventListener('click', (ev)=> { if (!emojiRow.contains(ev.target)) emojiPicker.style.display='none'; });
-
-    /* ---------------- Clear message history (admin only) ---------------- */
-    function updateClearButtonState() {
-      if (currentUser === ADMIN_NAME) { clearBtn.style.display='inline-block'; clearBtn.disabled=false; } else { clearBtn.style.display='none'; clearBtn.disabled=true; }
-    }
-    clearBtn.addEventListener('click', async ()=> {
-      if (currentUser !== ADMIN_NAME) { alert('Only admin'); return; }
-      try {
-        const snap = await getDocs(collection(db,'messages'));
-        const deletes = [];
-        snap.forEach(d => deletes.push(deleteDoc(doc(db,'messages', d.id))));
-        await Promise.all(deletes);
-      } catch(e){ alert('Failed to clear: '+(e.message||e)); }
+    emojiBtn.addEventListener('click', () => {
+      emojiPicker.style.display = (emojiPicker.style.display === 'block') ? 'none' : 'block';
+    });
+    document.addEventListener('click', (ev) => {
+      if (!emojiRow.contains(ev.target)) {
+        emojiPicker.style.display = 'none';
+      }
     });
 
-    /* ---------------- Populate servers for UI list (when viewing servers panel inline) ---------------- */
-    function populateServersFor(accountName) {
-      // This function updates the servers panel selection content (right side), but since
-      // servers panel is present as a side-panel, renderServerPanel handles visibility.
-      renderServerPanel();
+    howBtn.addEventListener('click', () => { howBackdrop.style.display = 'flex'; });
+    howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
+    howBackdrop.addEventListener('click', (ev) => { if (ev.target === howBackdrop) howBackdrop.style.display = 'none'; });
+
+    // Server admin-add wiring
+    addServerBtn.addEventListener('click', async () => {
+      if (currentUser !== ADMIN_NAME) return alert('Only Administrator may add servers from the Servers panel.');
+      const name = (newServerInput.value || '').trim();
+      if (!name) return alert('Enter a server name.');
+      try {
+        const snap = await getDoc(serversDocRef);
+        const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        if (existing[name]) {
+          alert('A server with that name already exists.');
+          return;
+        }
+        existing[name] = { members: [currentUser], creator: currentUser };
+        await setDoc(serversDocRef, { map: existing }, { merge: true });
+        newServerInput.value = '';
+      } catch (err) {
+        alert('Failed to add server: ' + (err.message || err));
+      }
+    });
+
+    closeServerModal.addEventListener('click', () => {
+      serverBackdrop.style.display = 'none';
+    });
+
+    function checkServerFormValidity() {
+      const name = (serverNameInput.value || '').trim();
+      const cbs = membersList.querySelectorAll('input[type="checkbox"]');
+      let selected = 0;
+      cbs.forEach(cb => { if (cb.checked) selected++; });
+      if (name.length > 0 && selected > 0) {
+        createServerBtn.disabled = false;
+        createServerBtn.classList.add('enabled');
+        createServerBtn.classList.remove('create-server-btn');
+      } else {
+        createServerBtn.disabled = true;
+        createServerBtn.classList.remove('enabled');
+        createServerBtn.classList.add('create-server-btn');
+      }
     }
 
-    /* ---------------- Manage modal helper (populate lists are above) ---------------- */
+    createServerBtn.addEventListener('click', async () => {
+      if (createServerBtn.disabled) return;
+      const name = (serverNameInput.value || '').trim();
+      if (!name) return alert('Enter a server name.');
+      const cbs = membersList.querySelectorAll('input[type="checkbox"]');
+      const members = [];
+      cbs.forEach(cb => { if (cb.checked) members.push(cb.dataset.name); });
+      if (members.length === 0) return alert('Select at least one member.');
 
-    /* ---------------- DM/Server selection initial state ---------------- */
-    // Initially, login overlay visible and composer hidden. composer will be shown after login.
-    composer.style.display = 'none';
-    dmPanel.style.display = 'none';
-    serverSelectPanel.style.display = 'none';
-    manageBackdrop.style.display = 'none';
-    howBackdrop.style.display = 'none';
+      try {
+        const snap = await getDoc(serversDocRef);
+        const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+        existing[name] = { members, creator: (currentUser || (members[0] || null)) };
+        await setDoc(serversDocRef, { map: existing }, { merge: true });
+        serverBackdrop.style.display = 'none';
+        alert(`Server "${name}" created.`);
+      } catch (err) {
+        alert('Failed to create server: ' + (err.message || err));
+      }
+    });
 
-    /* ---------------- Utility: render DM & Server panels after accounts/servers change ---------------- */
-    // Called already by listeners; define a lightweight initialization call:
-    renderDMPanel();
-    renderServerPanel();
+    // Populate servers panel for a given accountName
+    async function populateServersFor(accountName) {
+      serversList.innerHTML = '';
+      if (!accountName) {
+        return;
+      }
+
+      const names = Object.keys(serversMap || {});
+      if (!names.length) return;
+
+      for (const s of names) {
+        const sd = getServerData(s);
+        const members = sd.members || [];
+        const creator = sd.creator || null;
+
+        if (currentUser !== ADMIN_NAME && !(members.includes(accountName) || creator === accountName)) {
+          continue;
+        }
+
+        const li = document.createElement('li');
+        const label = document.createElement('span');
+        label.textContent = s;
+        li.appendChild(label);
+
+        const right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.gap = '8px';
+        right.style.alignItems = 'center';
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'server-edit-btn';
+        editBtn.textContent = 'Edit';
+        const canEdit = (currentUser === ADMIN_NAME) || (creator === accountName);
+        if (canEdit) {
+          editBtn.addEventListener('click', async () => {
+            const newName = prompt('Enter new server name (leave blank to cancel):', s);
+            if (!newName || newName.trim() === '' || newName === s) return;
+            const newNameTrim = newName.trim();
+            try {
+              const snap = await getDoc(serversDocRef);
+              const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+              if (existing[newNameTrim]) {
+                alert('A server with that name already exists.');
+                return;
+              }
+              existing[newNameTrim] = existing[s];
+              delete existing[s];
+              await setDoc(serversDocRef, { map: existing }, { merge: true });
+
+              try {
+                const msgsSnap = await getDocs(collection(db, 'messages'));
+                const updates = [];
+                msgsSnap.forEach(md => {
+                  const data = md.data();
+                  if (data && data.dmTarget === s) {
+                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: newNameTrim }));
+                  }
+                });
+                if (updates.length) await Promise.all(updates);
+              } catch (err2) {
+                console.warn('Failed to update messages dmTarget after server rename:', err2?.message || err2);
+              }
+            } catch (err) {
+              alert('Failed to rename server: ' + (err.message || err));
+            }
+          });
+        } else {
+          editBtn.disabled = true;
+          editBtn.classList.add('disabled');
+        }
+        right.appendChild(editBtn);
+
+        const del = document.createElement('button');
+        del.className = 'remove-account';
+        del.textContent = 'Delete';
+        if (currentUser === ADMIN_NAME || creator === accountName) {
+          del.addEventListener('click', async () => {
+            if (!confirm(`Delete server "${s}" from cloud? This will remove the server for everyone.`)) return;
+            try {
+              const snap = await getDoc(serversDocRef);
+              const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+              if (existing[s]) delete existing[s];
+              await setDoc(serversDocRef, { map: existing }, { merge: true });
+              try {
+                const msgsSnap = await getDocs(collection(db, 'messages'));
+                const updates = [];
+                msgsSnap.forEach(md => {
+                  const data = md.data();
+                  if (data && data.dmTarget === s) {
+                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: null }));
+                  }
+                });
+                if (updates.length) await Promise.all(updates);
+              } catch (err2) {
+                console.warn('Failed to update messages after server delete:', err2?.message || err2);
+              }
+            } catch (err) {
+              alert('Failed to delete server: ' + (err.message || err));
+            }
+          });
+        } else {
+          del.disabled = true;
+          del.classList.add('disabled');
+        }
+        right.appendChild(del);
+
+        li.appendChild(right);
+        serversList.appendChild(li);
+      }
+    }
+
+    // Populate side panels (DMs and Servers selection)
+    function populateSidePanels() {
+      if (!currentUser) return;
+
+      // Populate DM panel
+      dmAccountsList.innerHTML = '';
+      const accounts = accountsCache.filter(a => a !== currentUser);
+      
+      // Main Server button
+      const mainBtn = document.createElement('button');
+      mainBtn.className = 'dm-account-btn';
+      mainBtn.textContent = 'Main Server';
+      mainBtn.addEventListener('click', () => {
+        activeChatTarget = 'Main Server';
+        activeChatType = 'main';
+        updateActivePanelStates();
+        renderMessages(lastMessages);
+      });
+      dmAccountsList.appendChild(mainBtn);
+
+      // DM account buttons
+      accounts.forEach(acc => {
+        const btn = document.createElement('button');
+        btn.className = 'dm-account-btn';
+        btn.textContent = acc;
+        btn.addEventListener('click', () => {
+          activeChatTarget = acc;
+          activeChatType = 'dm';
+          updateActivePanelStates();
+          renderMessages(lastMessages);
+        });
+        dmAccountsList.appendChild(btn);
+      });
+
+      // Populate Servers selection panel
+      serversSelectList.innerHTML = '';
+      const serverNames = Object.keys(serversMap || {});
+      for (const s of serverNames) {
+        const sd = getServerData(s);
+        const members = sd.members;
+        if (!members.includes(currentUser) && currentUser !== ADMIN_NAME) continue;
+
+        const btn = document.createElement('button');
+        btn.className = 'server-select-btn';
+        btn.textContent = s;
+        btn.addEventListener('click', () => {
+          activeChatTarget = s;
+          activeChatType = 'server';
+          updateActivePanelStates();
+          renderMessages(lastMessages);
+        });
+        serversSelectList.appendChild(btn);
+      }
+
+      updateActivePanelStates();
+    }
+
+    function updateActivePanelStates() {
+      // Update active state for DM buttons
+      const dmBtns = dmAccountsList.querySelectorAll('.dm-account-btn');
+      dmBtns.forEach(btn => {
+        if (activeChatType === 'main' && btn.textContent === 'Main Server') {
+          btn.classList.add('active');
+        } else if (activeChatType === 'dm' && btn.textContent === activeChatTarget) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Update active state for Server buttons
+      const serverBtns = serversSelectList.querySelectorAll('.server-select-btn');
+      serverBtns.forEach(btn => {
+        if (activeChatType === 'server' && btn.textContent === activeChatTarget) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
 
   </script>
 </body>
