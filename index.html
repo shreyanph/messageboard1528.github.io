@@ -22,7 +22,7 @@
     .page-inner {
       position: relative;
       max-width: 640px;
-      margin: 40px auto 120px; /* bottom margin to make room for fixed composer */
+      margin: 40px auto 120px;
       padding: 12px;
       box-sizing: border-box;
       transition: opacity 420ms ease, transform 420ms ease;
@@ -89,6 +89,22 @@
       display: none;
     }
 
+    /* Clear Message History button - FIXED BOTTOM RIGHT */
+    #clearBtn {
+      position: fixed;
+      bottom: 12px;
+      right: 12px;
+      z-index: 6001;
+      background: rgba(220,20,60,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
     h2 { margin-bottom: 10px; color: #ffffff; }
 
     input, textarea, select {
@@ -124,7 +140,7 @@
       flex-direction: column;
       gap: 10px;
       overflow: auto;
-      max-height: calc(100vh - 360px); /* leaves room for top UI + fixed composer */
+      max-height: calc(100vh - 360px);
       padding-bottom: 12px;
     }
 
@@ -341,16 +357,6 @@
       cursor: pointer;
     }
 
-    #clearBtn {
-      background: rgba(220,20,60,0.95);
-      border: none;
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-
     .emoji-row {
       display: flex;
       gap: 8px;
@@ -470,7 +476,7 @@
       padding: 10px;
       border-radius: 10px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
-      display: none; /* HIDDEN BY DEFAULT */
+      display: none;
       flex-direction: column;
       gap: 8px;
     }
@@ -559,6 +565,7 @@
       }
       #dmPanel { left: 8px; }
       #serversSelectionPanel { right: 8px; }
+      #clearBtn { bottom: 8px; right: 8px; }
     }
   </style>
 </head>
@@ -622,15 +629,16 @@
 
     <!-- Message history -->
     <div id="messages" aria-live="polite"></div>
-
-    <br>
-    <button id="clearBtn" title="Only Administrator may clear history">Clear Message History</button>
   </div>
 
   <!-- Sign Out button (top-right) -->
   <button id="signOutBtn" title="Sign out">Sign Out</button>
+  
   <!-- Change Password button (left of Sign Out) - blue -->
   <button id="changePwBtn" title="Change your password">Change Password</button>
+
+  <!-- Clear Message History button (FIXED BOTTOM RIGHT) -->
+  <button id="clearBtn" title="Clear all messages (Administrator only)">Clear Message History</button>
 
   <!-- Management backdrop (for admin panels) -->
   <div id="managementBackdrop">
@@ -651,7 +659,7 @@
         <!-- ADMIN: add server input -->
         <div id="newServerRow" style="display:flex; gap:8px; margin-bottom:8px;">
           <input id="newServerInput" placeholder="New server name" style="flex:1; padding:6px;" />
-          <button id="addServerBtn" style="padding:6px 8px;">Add</button>
+          <button id="addServerBtn" style="padding:6px 8px; background: rgba(0,180,0,0.95); border: none; color: #fff; border-radius: 6px; cursor: pointer;">Add</button>
         </div>
 
         <!-- servers list -->
@@ -881,8 +889,8 @@
     let replyTargetName = null;
     let serversMap = {};
     let accountsCache = [];
-    let activeChatTarget = 'Main Server'; // Can be 'Main Server', account name, or server name
-    let activeChatType = 'main'; // 'main', 'dm', or 'server'
+    let activeChatTarget = 'Main Server';
+    let activeChatType = 'main';
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -1253,10 +1261,8 @@
       currentUser = accountName;
       pageInner.style.display = '';
       
-      // Show composer after login
       composer.style.display = 'flex';
 
-      // Show side panels
       dmPanel.style.display = 'block';
       serversSelectionPanel.style.display = 'block';
 
@@ -1285,7 +1291,6 @@
       populateServersFor(currentUser);
       populateSidePanels();
 
-      // Default to Main Server
       activeChatTarget = 'Main Server';
       activeChatType = 'main';
       updateActivePanelStates();
@@ -1300,11 +1305,10 @@
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
       managementBtn.style.display = 'none';
+      clearBtn.style.display = 'none';
       
-      // Hide composer on logout
       composer.style.display = 'none';
 
-      // Hide side panels
       dmPanel.style.display = 'none';
       serversSelectionPanel.style.display = 'none';
 
@@ -1404,7 +1408,6 @@
       }
     });
 
-    // Management button (admin only)
     managementBtn.addEventListener('click', () => {
       managementBackdrop.style.display = 'flex';
     });
@@ -1744,7 +1747,7 @@
 
     function updateClearButtonState() {
       if (currentUser === ADMIN_NAME) {
-        clearBtn.style.display = '';
+        clearBtn.style.display = 'inline-block';
         clearBtn.disabled = false;
         clearBtn.title = 'Clear all messages (Administrator only)';
       } else {
@@ -1760,11 +1763,13 @@
         updateClearButtonState();
         return;
       }
+      if (!confirm('Clear all message history? This cannot be undone.')) return;
       try {
         const snap = await getDocs(collection(db, 'messages'));
         const deletes = [];
         snap.forEach(d => deletes.push(deleteDoc(doc(db, 'messages', d.id))));
         await Promise.all(deletes);
+        alert('Message history cleared.');
       } catch (err) {
         alert("Failed to clear messages: " + err.message);
       }
@@ -1796,11 +1801,17 @@
     howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
     howBackdrop.addEventListener('click', (ev) => { if (ev.target === howBackdrop) howBackdrop.style.display = 'none'; });
 
-    // Server admin-add wiring
+    // Server admin-add wiring - FIXED
     addServerBtn.addEventListener('click', async () => {
-      if (currentUser !== ADMIN_NAME) return alert('Only Administrator may add servers from the Servers panel.');
+      if (currentUser !== ADMIN_NAME) {
+        alert('Only Administrator may add servers.');
+        return;
+      }
       const name = (newServerInput.value || '').trim();
-      if (!name) return alert('Enter a server name.');
+      if (!name) {
+        alert('Enter a server name.');
+        return;
+      }
       try {
         const snap = await getDoc(serversDocRef);
         const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
@@ -1811,7 +1822,9 @@
         existing[name] = { members: [currentUser], creator: currentUser };
         await setDoc(serversDocRef, { map: existing }, { merge: true });
         newServerInput.value = '';
+        alert(`Server "${name}" created successfully.`);
       } catch (err) {
+        console.error('Failed to add server:', err);
         alert('Failed to add server: ' + (err.message || err));
       }
     });
@@ -1857,28 +1870,27 @@
       }
     });
 
-    // Populate servers panel for a given accountName
+    // Populate servers panel for management - FIXED DELETE FUNCTIONALITY
     async function populateServersFor(accountName) {
       serversList.innerHTML = '';
-      if (!accountName) {
-        return;
-      }
+      if (!accountName) return;
 
       const names = Object.keys(serversMap || {});
       if (!names.length) return;
 
-      for (const s of names) {
-        const sd = getServerData(s);
+      for (const serverName of names) {
+        const sd = getServerData(serverName);
         const members = sd.members || [];
         const creator = sd.creator || null;
 
+        // Admin sees all servers; others see only their servers
         if (currentUser !== ADMIN_NAME && !(members.includes(accountName) || creator === accountName)) {
           continue;
         }
 
         const li = document.createElement('li');
         const label = document.createElement('span');
-        label.textContent = s;
+        label.textContent = serverName;
         li.appendChild(label);
 
         const right = document.createElement('div');
@@ -1886,14 +1898,15 @@
         right.style.gap = '8px';
         right.style.alignItems = 'center';
 
+        // Edit button
         const editBtn = document.createElement('button');
         editBtn.className = 'server-edit-btn';
         editBtn.textContent = 'Edit';
         const canEdit = (currentUser === ADMIN_NAME) || (creator === accountName);
         if (canEdit) {
           editBtn.addEventListener('click', async () => {
-            const newName = prompt('Enter new server name (leave blank to cancel):', s);
-            if (!newName || newName.trim() === '' || newName === s) return;
+            const newName = prompt('Enter new server name (leave blank to cancel):', serverName);
+            if (!newName || newName.trim() === '' || newName === serverName) return;
             const newNameTrim = newName.trim();
             try {
               const snap = await getDoc(serversDocRef);
@@ -1902,16 +1915,17 @@
                 alert('A server with that name already exists.');
                 return;
               }
-              existing[newNameTrim] = existing[s];
-              delete existing[s];
+              existing[newNameTrim] = existing[serverName];
+              delete existing[serverName];
               await setDoc(serversDocRef, { map: existing }, { merge: true });
 
+              // Update messages
               try {
                 const msgsSnap = await getDocs(collection(db, 'messages'));
                 const updates = [];
                 msgsSnap.forEach(md => {
                   const data = md.data();
-                  if (data && data.dmTarget === s) {
+                  if (data && data.dmTarget === serverName) {
                     updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: newNameTrim }));
                   }
                 });
@@ -1919,7 +1933,9 @@
               } catch (err2) {
                 console.warn('Failed to update messages dmTarget after server rename:', err2?.message || err2);
               }
+              alert(`Server renamed to "${newNameTrim}".`);
             } catch (err) {
+              console.error('Failed to rename server:', err);
               alert('Failed to rename server: ' + (err.message || err));
             }
           });
@@ -1929,31 +1945,61 @@
         }
         right.appendChild(editBtn);
 
+        // Delete button - FIXED
         const del = document.createElement('button');
         del.className = 'remove-account';
         del.textContent = 'Delete';
-        if (currentUser === ADMIN_NAME || creator === accountName) {
+        
+        // Admin can delete any server; creators can delete their own
+        const canDelete = (currentUser === ADMIN_NAME) || (creator === accountName);
+        
+        if (canDelete) {
           del.addEventListener('click', async () => {
-            if (!confirm(`Delete server "${s}" from cloud? This will remove the server for everyone.`)) return;
+            if (!confirm(`Delete server "${serverName}" from cloud? This will remove the server for everyone.`)) return;
+            
             try {
+              console.log('Attempting to delete server:', serverName);
+              
+              // Get current servers map
               const snap = await getDoc(serversDocRef);
               const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-              if (existing[s]) delete existing[s];
-              await setDoc(serversDocRef, { map: existing }, { merge: true });
-              try {
-                const msgsSnap = await getDocs(collection(db, 'messages'));
-                const updates = [];
-                msgsSnap.forEach(md => {
-                  const data = md.data();
-                  if (data && data.dmTarget === s) {
-                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: null }));
+              
+              console.log('Current servers:', Object.keys(existing));
+              
+              // Delete the server
+              if (existing[serverName]) {
+                delete existing[serverName];
+                console.log('Server deleted from map. New servers:', Object.keys(existing));
+                
+                // Save back to Firestore
+                await setDoc(serversDocRef, { map: existing }, { merge: true });
+                console.log('Saved to Firestore');
+                
+                // Update messages that referenced this server
+                try {
+                  const msgsSnap = await getDocs(collection(db, 'messages'));
+                  const updates = [];
+                  msgsSnap.forEach(md => {
+                    const data = md.data();
+                    if (data && data.dmTarget === serverName) {
+                      updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: null }));
+                    }
+                  });
+                  if (updates.length) {
+                    await Promise.all(updates);
+                    console.log(`Updated ${updates.length} messages`);
                   }
-                });
-                if (updates.length) await Promise.all(updates);
-              } catch (err2) {
-                console.warn('Failed to update messages after server delete:', err2?.message || err2);
+                } catch (err2) {
+                  console.warn('Failed to update messages after server delete:', err2?.message || err2);
+                }
+                
+                alert(`Server "${serverName}" deleted successfully.`);
+              } else {
+                console.warn('Server not found in map:', serverName);
+                alert('Server not found.');
               }
             } catch (err) {
+              console.error('Failed to delete server:', err);
               alert('Failed to delete server: ' + (err.message || err));
             }
           });
@@ -1968,15 +2014,13 @@
       }
     }
 
-    // Populate side panels (DMs and Servers selection)
+    // Populate side panels
     function populateSidePanels() {
       if (!currentUser) return;
 
-      // Populate DM panel
       dmAccountsList.innerHTML = '';
       const accounts = accountsCache.filter(a => a !== currentUser);
       
-      // Main Server button
       const mainBtn = document.createElement('button');
       mainBtn.className = 'dm-account-btn';
       mainBtn.textContent = 'Main Server';
@@ -1988,7 +2032,6 @@
       });
       dmAccountsList.appendChild(mainBtn);
 
-      // DM account buttons
       accounts.forEach(acc => {
         const btn = document.createElement('button');
         btn.className = 'dm-account-btn';
@@ -2002,7 +2045,6 @@
         dmAccountsList.appendChild(btn);
       });
 
-      // Populate Servers selection panel
       serversSelectList.innerHTML = '';
       const serverNames = Object.keys(serversMap || {});
       for (const s of serverNames) {
@@ -2026,7 +2068,6 @@
     }
 
     function updateActivePanelStates() {
-      // Update active state for DM buttons
       const dmBtns = dmAccountsList.querySelectorAll('.dm-account-btn');
       dmBtns.forEach(btn => {
         if (activeChatType === 'main' && btn.textContent === 'Main Server') {
@@ -2038,7 +2079,6 @@
         }
       });
 
-      // Update active state for Server buttons
       const serverBtns = serversSelectList.querySelectorAll('.server-select-btn');
       serverBtns.forEach(btn => {
         if (activeChatType === 'server' && btn.textContent === activeChatTarget) {
