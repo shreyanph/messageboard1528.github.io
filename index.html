@@ -41,10 +41,26 @@
       border-radius: 6px;
       pointer-events: auto;
       color: #fff;
+      cursor: pointer;
     }
 
-    /* Account & Server Management button (to the right of How To Use) - BLUE */
+    /* Account & Server Management button (admin only, to the right of How To Use) - BLUE */
     #managementBtn {
+      position: fixed;
+      top: 12px;
+      left: 126px;
+      z-index: 5000;
+      background: rgba(30,144,255,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      display: none;
+    }
+
+    /* Server Management button (non-admin users, to the right of How To Use) - BLUE */
+    #serverManagementBtn {
       position: fixed;
       top: 12px;
       left: 126px;
@@ -288,8 +304,30 @@
       padding-bottom: 40px;
     }
 
+    /* Server Management backdrop (for non-admin users) */
+    #serverManagementBackdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 4000;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 80px;
+      overflow-y: auto;
+    }
+
+    #serverManagementContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 600px;
+      width: 90%;
+      padding-bottom: 40px;
+    }
+
     /* Admin panel & Servers panel */
-    #adminPanel, #serversPanel {
+    #adminPanel, #serversPanel, #userServersPanel {
       background: rgba(0,0,0,0.9);
       border: 1px solid rgba(255,255,255,0.12);
       padding: 14px;
@@ -302,8 +340,8 @@
     #accountsList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
 
     /* Servers list styling (same as accounts list) */
-    #serversList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
-    #serversList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
+    #serversList, #userServersList { list-style: none; padding: 0; margin: 6px 0; max-height: 220px; overflow: auto; }
+    #serversList li, #userServersList li { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 4px; border-radius:6px; }
 
     .remove-account {
       background: rgba(220,20,60,0.95);
@@ -451,7 +489,7 @@
     #deleteCurrentBtn { background: rgba(220,20,60,0.95); border: none; color: #fff; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-left: 8px; margin-top: 10px; }
 
     .from-row, .chat-with-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-    .from-row label, .chat-with-row label { white-space: nowrap; font-weight: 600; color: #fff; }
+    .from-row label, .chat-with-row label { whitespace: nowrap; font-weight: 600; color: #fff; }
     .from-row select, .chat-with-row select { min-width: 220px; }
 
     /* Server modal */
@@ -627,6 +665,9 @@
     <!-- Account & Server Management button (admin only) -->
     <button id="managementBtn">Account & Server Management</button>
 
+    <!-- Server Management button (non-admin users) -->
+    <button id="serverManagementBtn">Server Management</button>
+
     <!-- Message history -->
     <div id="messages" aria-live="polite"></div>
   </div>
@@ -656,14 +697,30 @@
       <!-- Servers panel -->
       <div id="serversPanel">
         <h4>Servers (cloud)</h4>
-        <!-- ADMIN: add server input -->
-        <div id="newServerRow" style="display:flex; gap:8px; margin-bottom:8px;">
-          <input id="newServerInput" placeholder="New server name" style="flex:1; padding:6px;" />
-          <button id="addServerBtn" style="padding:6px 8px; background: rgba(0,180,0,0.95); border: none; color: #fff; border-radius: 6px; cursor: pointer;">Add</button>
+        <!-- ADMIN: add server button (opens modal with checkboxes) -->
+        <div style="margin-bottom:8px;">
+          <button id="addServerBtn" style="padding:6px 8px; background: rgba(0,180,0,0.95); border: none; color: #fff; border-radius: 6px; cursor: pointer; width: 100%;">Create New Server</button>
         </div>
 
         <!-- servers list -->
         <ul id="serversList" aria-live="polite"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Server Management backdrop (for non-admin users) -->
+  <div id="serverManagementBackdrop">
+    <div id="serverManagementContainer">
+      <!-- User Servers panel -->
+      <div id="userServersPanel">
+        <h4>My Servers</h4>
+        <!-- User: add server button (opens modal with checkboxes) -->
+        <div style="margin-bottom:8px;">
+          <button id="userAddServerBtn" style="padding:6px 8px; background: rgba(0,180,0,0.95); border: none; color: #fff; border-radius: 6px; cursor: pointer; width: 100%;">Create New Server</button>
+        </div>
+
+        <!-- user servers list -->
+        <ul id="userServersList" aria-live="polite"></ul>
       </div>
     </div>
   </div>
@@ -702,7 +759,7 @@
   <div id="serverBackdrop" class="server-backdrop" role="dialog" aria-modal="true">
     <div class="server-modal" role="document">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <strong style="font-size:16px;">Create Server</strong>
+        <strong id="serverModalTitle" style="font-size:16px;">Create Server</strong>
         <button id="closeServerModal" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>
       </div>
       <div>
@@ -857,14 +914,18 @@
     const serverNameInput = document.getElementById('serverNameInput');
     const membersList = document.getElementById('membersList');
     const createServerBtn = document.getElementById('createServerBtn');
+    const serverModalTitle = document.getElementById('serverModalTitle');
 
     const serversList = document.getElementById('serversList');
-    const newServerRow = document.getElementById('newServerRow');
-    const newServerInput = document.getElementById('newServerInput');
     const addServerBtn = document.getElementById('addServerBtn');
 
     const managementBtn = document.getElementById('managementBtn');
     const managementBackdrop = document.getElementById('managementBackdrop');
+
+    const serverManagementBtn = document.getElementById('serverManagementBtn');
+    const serverManagementBackdrop = document.getElementById('serverManagementBackdrop');
+    const userServersList = document.getElementById('userServersList');
+    const userAddServerBtn = document.getElementById('userAddServerBtn');
 
     const composer = document.querySelector('.composer');
 
@@ -891,6 +952,8 @@
     let accountsCache = [];
     let activeChatTarget = 'Main Server';
     let activeChatType = 'main';
+    let serverModalMode = 'create'; // 'create' or 'edit'
+    let editingServerName = null;
 
     // helper: SHA-256
     async function hashPassword(password) {
@@ -933,11 +996,13 @@
       const data = snap.exists() ? (snap.data().map || {}) : {};
       serversMap = Object.assign({}, data);
       populateServersFor(currentUser);
+      populateUserServersFor(currentUser);
       populateSidePanels();
     }, err => {
       console.warn('Servers listener error:', err);
       serversMap = {};
       populateServersFor(currentUser);
+      populateUserServersFor(currentUser);
       populateSidePanels();
     });
 
@@ -1069,6 +1134,14 @@
       accountButtons.appendChild(b);
     }
 
+    // Enter key submit for new account input
+    newAccountInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addAccountBtn.click();
+      }
+    });
+
     addAccountBtn.addEventListener('click', async () => {
       const v = (newAccountInput.value || "").trim();
       if (!v) return;
@@ -1156,6 +1229,21 @@
 
     document.getElementById('cancelPwBtn').addEventListener('click', endPasswordFlow);
     document.getElementById('cancelCreateBtn').addEventListener('click', endPasswordFlow);
+
+    // Enter key submits for password creation
+    newPasswordInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        newPasswordRetype.focus();
+      }
+    });
+
+    newPasswordRetype.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        createPwBtn.click();
+      }
+    });
 
     document.getElementById('createPwBtn').addEventListener('click', async () => {
       const p1 = (newPasswordInput.value || '').trim();
@@ -1268,8 +1356,10 @@
 
       if (currentUser === ADMIN_NAME) {
         managementBtn.style.display = 'inline-block';
+        serverManagementBtn.style.display = 'none';
       } else {
         managementBtn.style.display = 'none';
+        serverManagementBtn.style.display = 'inline-block';
       }
 
       messageInput.focus();
@@ -1289,6 +1379,7 @@
       updateClearButtonState();
 
       populateServersFor(currentUser);
+      populateUserServersFor(currentUser);
       populateSidePanels();
 
       activeChatTarget = 'Main Server';
@@ -1305,6 +1396,7 @@
       signOutBtn.style.display = 'none';
       changePwBtn.style.display = 'none';
       managementBtn.style.display = 'none';
+      serverManagementBtn.style.display = 'none';
       clearBtn.style.display = 'none';
       
       composer.style.display = 'none';
@@ -1371,6 +1463,28 @@
     cpCancelBtn.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
     closePwModal.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
 
+    // Enter key submits for password change
+    cpCurrent.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        cpNew.focus();
+      }
+    });
+
+    cpNew.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        cpNewRetype.focus();
+      }
+    });
+
+    cpNewRetype.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        cpSaveBtn.click();
+      }
+    });
+
     cpSaveBtn.addEventListener('click', async () => {
       if (!currentUser) { alert('No user signed in.'); return; }
       const target = pwChangeTarget || currentUser;
@@ -1415,6 +1529,16 @@
     managementBackdrop.addEventListener('click', (e) => {
       if (e.target === managementBackdrop) {
         managementBackdrop.style.display = 'none';
+      }
+    });
+
+    serverManagementBtn.addEventListener('click', () => {
+      serverManagementBackdrop.style.display = 'flex';
+    });
+
+    serverManagementBackdrop.addEventListener('click', (e) => {
+      if (e.target === serverManagementBackdrop) {
+        serverManagementBackdrop.style.display = 'none';
       }
     });
 
@@ -1801,32 +1925,80 @@
     howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
     howBackdrop.addEventListener('click', (ev) => { if (ev.target === howBackdrop) howBackdrop.style.display = 'none'; });
 
-    // Server admin-add wiring - FIXED
-    addServerBtn.addEventListener('click', async () => {
-      if (currentUser !== ADMIN_NAME) {
-        alert('Only Administrator may add servers.');
-        return;
+    // Open server creation modal with checkboxes
+    function openServerModal(mode, serverName = null) {
+      serverModalMode = mode;
+      editingServerName = serverName;
+
+      if (mode === 'create') {
+        serverModalTitle.textContent = 'Create Server';
+        serverNameInput.value = '';
+        createServerBtn.textContent = 'Create Server';
+      } else {
+        serverModalTitle.textContent = 'Edit Server';
+        serverNameInput.value = serverName || '';
+        createServerBtn.textContent = 'Save Changes';
       }
-      const name = (newServerInput.value || '').trim();
-      if (!name) {
-        alert('Enter a server name.');
-        return;
-      }
-      try {
-        const snap = await getDoc(serversDocRef);
-        const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-        if (existing[name]) {
-          alert('A server with that name already exists.');
-          return;
+
+      // Populate members list with checkboxes
+      membersList.innerHTML = '';
+      const accounts = accountsCache.slice();
+
+      accounts.forEach(acc => {
+        const row = document.createElement('div');
+        row.className = 'member-row';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.id = `member_${acc}`;
+        cb.dataset.name = acc;
+
+        // If editing, check members that are already in the server
+        if (mode === 'edit' && serverName) {
+          const sd = getServerData(serverName);
+          if (sd.members.includes(acc)) {
+            cb.checked = true;
+          }
         }
-        existing[name] = { members: [currentUser], creator: currentUser };
-        await setDoc(serversDocRef, { map: existing }, { merge: true });
-        newServerInput.value = '';
-        alert(`Server "${name}" created successfully.`);
-      } catch (err) {
-        console.error('Failed to add server:', err);
-        alert('Failed to add server: ' + (err.message || err));
+
+        cb.addEventListener('change', checkServerFormValidity);
+
+        const label = document.createElement('label');
+        label.htmlFor = `member_${acc}`;
+        label.textContent = acc;
+        label.style.cursor = 'pointer';
+        label.style.marginLeft = '6px';
+
+        row.appendChild(cb);
+        row.appendChild(label);
+        membersList.appendChild(row);
+      });
+
+      serverNameInput.addEventListener('input', checkServerFormValidity);
+      checkServerFormValidity();
+
+      serverBackdrop.style.display = 'flex';
+      serverNameInput.focus();
+    }
+
+    // Enter key submit for server name input
+    serverNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!createServerBtn.disabled) {
+          createServerBtn.click();
+        }
       }
+    });
+
+    // Admin add server button - opens modal
+    addServerBtn.addEventListener('click', () => {
+      openServerModal('create');
+    });
+
+    // User add server button - opens modal
+    userAddServerBtn.addEventListener('click', () => {
+      openServerModal('create');
     });
 
     closeServerModal.addEventListener('click', () => {
@@ -1861,19 +2033,59 @@
       try {
         const snap = await getDoc(serversDocRef);
         const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-        existing[name] = { members, creator: (currentUser || (members[0] || null)) };
-        await setDoc(serversDocRef, { map: existing }, { merge: true });
-        serverBackdrop.style.display = 'none';
-        alert(`Server "${name}" created.`);
+
+        if (serverModalMode === 'create') {
+          if (existing[name]) {
+            alert('A server with that name already exists.');
+            return;
+          }
+          existing[name] = { members, creator: currentUser };
+          await setDoc(serversDocRef, { map: existing }, { merge: true });
+          serverBackdrop.style.display = 'none';
+          alert(`Server "${name}" created successfully.`);
+        } else {
+          // Edit mode
+          if (name !== editingServerName && existing[name]) {
+            alert('A server with that name already exists.');
+            return;
+          }
+
+          if (name !== editingServerName) {
+            // Rename
+            existing[name] = existing[editingServerName];
+            delete existing[editingServerName];
+
+            // Update messages
+            try {
+              const msgsSnap = await getDocs(collection(db, 'messages'));
+              const updates = [];
+              msgsSnap.forEach(md => {
+                const data = md.data();
+                if (data && data.dmTarget === editingServerName) {
+                  updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: name }));
+                }
+              });
+              if (updates.length) await Promise.all(updates);
+            } catch (err2) {
+              console.warn('Failed to update messages after rename:', err2?.message || err2);
+            }
+          }
+
+          // Update members
+          existing[name].members = members;
+          await setDoc(serversDocRef, { map: existing }, { merge: true });
+          serverBackdrop.style.display = 'none';
+          alert(`Server "${name}" updated successfully.`);
+        }
       } catch (err) {
-        alert('Failed to create server: ' + (err.message || err));
+        alert('Failed to save server: ' + (err.message || err));
       }
     });
 
-    // Populate servers panel for management - FIXED DELETE FUNCTIONALITY
+    // Populate admin servers panel
     async function populateServersFor(accountName) {
       serversList.innerHTML = '';
-      if (!accountName) return;
+      if (!accountName || accountName !== ADMIN_NAME) return;
 
       const names = Object.keys(serversMap || {});
       if (!names.length) return;
@@ -1882,11 +2094,6 @@
         const sd = getServerData(serverName);
         const members = sd.members || [];
         const creator = sd.creator || null;
-
-        // Admin sees all servers; others see only their servers
-        if (currentUser !== ADMIN_NAME && !(members.includes(accountName) || creator === accountName)) {
-          continue;
-        }
 
         const li = document.createElement('li');
         const label = document.createElement('span');
@@ -1898,27 +2105,29 @@
         right.style.gap = '8px';
         right.style.alignItems = 'center';
 
-        // Edit button
         const editBtn = document.createElement('button');
         editBtn.className = 'server-edit-btn';
         editBtn.textContent = 'Edit';
-        const canEdit = (currentUser === ADMIN_NAME) || (creator === accountName);
-        if (canEdit) {
-          editBtn.addEventListener('click', async () => {
-            const newName = prompt('Enter new server name (leave blank to cancel):', serverName);
-            if (!newName || newName.trim() === '' || newName === serverName) return;
-            const newNameTrim = newName.trim();
-            try {
-              const snap = await getDoc(serversDocRef);
-              const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-              if (existing[newNameTrim]) {
-                alert('A server with that name already exists.');
-                return;
-              }
-              existing[newNameTrim] = existing[serverName];
+        editBtn.addEventListener('click', () => {
+          openServerModal('edit', serverName);
+        });
+        right.appendChild(editBtn);
+
+        const del = document.createElement('button');
+        del.className = 'remove-account';
+        del.textContent = 'Delete';
+        
+        del.addEventListener('click', async () => {
+          if (!confirm(`Delete server "${serverName}" from cloud? This will remove the server for everyone.`)) return;
+          
+          try {
+            const snap = await getDoc(serversDocRef);
+            const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+            
+            if (existing[serverName]) {
               delete existing[serverName];
               await setDoc(serversDocRef, { map: existing }, { merge: true });
-
+              
               // Update messages
               try {
                 const msgsSnap = await getDocs(collection(db, 'messages'));
@@ -1926,91 +2135,102 @@
                 msgsSnap.forEach(md => {
                   const data = md.data();
                   if (data && data.dmTarget === serverName) {
-                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: newNameTrim }));
+                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: null }));
                   }
                 });
                 if (updates.length) await Promise.all(updates);
               } catch (err2) {
-                console.warn('Failed to update messages dmTarget after server rename:', err2?.message || err2);
+                console.warn('Failed to update messages after server delete:', err2?.message || err2);
               }
-              alert(`Server renamed to "${newNameTrim}".`);
-            } catch (err) {
-              console.error('Failed to rename server:', err);
-              alert('Failed to rename server: ' + (err.message || err));
+              
+              alert(`Server "${serverName}" deleted successfully.`);
             }
-          });
-        } else {
-          editBtn.disabled = true;
-          editBtn.classList.add('disabled');
-        }
-        right.appendChild(editBtn);
-
-        // Delete button - FIXED
-        const del = document.createElement('button');
-        del.className = 'remove-account';
-        del.textContent = 'Delete';
-        
-        // Admin can delete any server; creators can delete their own
-        const canDelete = (currentUser === ADMIN_NAME) || (creator === accountName);
-        
-        if (canDelete) {
-          del.addEventListener('click', async () => {
-            if (!confirm(`Delete server "${serverName}" from cloud? This will remove the server for everyone.`)) return;
-            
-            try {
-              console.log('Attempting to delete server:', serverName);
-              
-              // Get current servers map
-              const snap = await getDoc(serversDocRef);
-              const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
-              
-              console.log('Current servers:', Object.keys(existing));
-              
-              // Delete the server
-              if (existing[serverName]) {
-                delete existing[serverName];
-                console.log('Server deleted from map. New servers:', Object.keys(existing));
-                
-                // Save back to Firestore
-                await setDoc(serversDocRef, { map: existing }, { merge: true });
-                console.log('Saved to Firestore');
-                
-                // Update messages that referenced this server
-                try {
-                  const msgsSnap = await getDocs(collection(db, 'messages'));
-                  const updates = [];
-                  msgsSnap.forEach(md => {
-                    const data = md.data();
-                    if (data && data.dmTarget === serverName) {
-                      updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: null }));
-                    }
-                  });
-                  if (updates.length) {
-                    await Promise.all(updates);
-                    console.log(`Updated ${updates.length} messages`);
-                  }
-                } catch (err2) {
-                  console.warn('Failed to update messages after server delete:', err2?.message || err2);
-                }
-                
-                alert(`Server "${serverName}" deleted successfully.`);
-              } else {
-                console.warn('Server not found in map:', serverName);
-                alert('Server not found.');
-              }
-            } catch (err) {
-              console.error('Failed to delete server:', err);
-              alert('Failed to delete server: ' + (err.message || err));
-            }
-          });
-        } else {
-          del.disabled = true;
-          del.classList.add('disabled');
-        }
+          } catch (err) {
+            console.error('Failed to delete server:', err);
+            alert('Failed to delete server: ' + (err.message || err));
+          }
+        });
         right.appendChild(del);
 
         li.appendChild(right);
         serversList.appendChild(li);
+      }
+    }
+
+    // Populate user servers panel (only servers created by current user)
+    async function populateUserServersFor(accountName) {
+      userServersList.innerHTML = '';
+      if (!accountName || accountName === ADMIN_NAME) return;
+
+      const names = Object.keys(serversMap || {});
+      if (!names.length) return;
+
+      for (const serverName of names) {
+        const sd = getServerData(serverName);
+        const creator = sd.creator || null;
+
+        // Only show servers created by this user
+        if (creator !== accountName) continue;
+
+        const li = document.createElement('li');
+        const label = document.createElement('span');
+        label.textContent = serverName;
+        li.appendChild(label);
+
+        const right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.gap = '8px';
+        right.style.alignItems = 'center';
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'server-edit-btn';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', () => {
+          openServerModal('edit', serverName);
+        });
+        right.appendChild(editBtn);
+
+        const del = document.createElement('button');
+        del.className = 'remove-account';
+        del.textContent = 'Delete';
+        
+        del.addEventListener('click', async () => {
+          if (!confirm(`Delete server "${serverName}"? This will remove it for everyone.`)) return;
+          
+          try {
+            const snap = await getDoc(serversDocRef);
+            const existing = (snap.exists() && snap.data().map) ? snap.data().map : {};
+            
+            if (existing[serverName]) {
+              delete existing[serverName];
+              await setDoc(serversDocRef, { map: existing }, { merge: true });
+              
+              // Update messages
+              try {
+                const msgsSnap = await getDocs(collection(db, 'messages'));
+                const updates = [];
+                msgsSnap.forEach(md => {
+                  const data = md.data();
+                  if (data && data.dmTarget === serverName) {
+                    updates.push(updateDoc(doc(db, 'messages', md.id), { dmTarget: null }));
+                  }
+                });
+                if (updates.length) await Promise.all(updates);
+              } catch (err2) {
+                console.warn('Failed to update messages after server delete:', err2?.message || err2);
+              }
+              
+              alert(`Server "${serverName}" deleted successfully.`);
+            }
+          } catch (err) {
+            console.error('Failed to delete server:', err);
+            alert('Failed to delete server: ' + (err.message || err));
+          }
+        });
+        right.appendChild(del);
+
+        li.appendChild(right);
+        userServersList.appendChild(li);
       }
     }
 
