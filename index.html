@@ -479,8 +479,22 @@
 
     .replies-wrapper { margin-left: 48px; margin-top: 8px; border-left: 2px solid rgba(255,165,0,0.9); padding-left: 12px; position: relative; display: flex; flex-direction: column; gap: 8px; }
     .replies-wrapper::before { content: ''; position: absolute; left: -12px; top: -10px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 12px solid rgba(255,165,0,0.95); }
-    .reply { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 8px 10px; color: #fff; font-size: 0.95em; word-wrap: break-word; }
-    .reply .r-name { font-weight:700; margin-right:8px; color:#fff; }
+    
+    /* Reply bubbles - now colored ovals like messages */
+    .reply { 
+      border-radius: 999px;
+      padding: 10px 16px;
+      display: inline-block;
+      align-self: flex-start;
+      max-width: 100%;
+      color: #ffffff;
+      font-size: 0.95em;
+      line-height: 1.25;
+      word-wrap: break-word;
+      box-sizing: border-box;
+    }
+    .reply .r-name { font-weight:700; margin-right:8px; color:#fff; display:inline; }
+    .reply .r-content { display:inline; color:#fff; }
 
     .reply-indicator { display: none; align-items: center; gap: 8px; color: #fff; padding: 6px 10px; border-radius: 8px; background: rgba(255,165,0,0.95); color: #ffffff; border: 1px solid rgba(255,165,0,0.95); margin: 8px 0; font-size: 0.95em; }
     .reply-indicator .cancel-reply { background: rgba(220,20,60,0.95); border: none; color: #fff; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
@@ -952,7 +966,7 @@
     let accountsCache = [];
     let activeChatTarget = 'Main Server';
     let activeChatType = 'main';
-    let serverModalMode = 'create'; // 'create' or 'edit'
+    let serverModalMode = 'create';
     let editingServerName = null;
 
     // helper: SHA-256
@@ -1134,7 +1148,6 @@
       accountButtons.appendChild(b);
     }
 
-    // Enter key submit for new account input
     newAccountInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1230,7 +1243,6 @@
     document.getElementById('cancelPwBtn').addEventListener('click', endPasswordFlow);
     document.getElementById('cancelCreateBtn').addEventListener('click', endPasswordFlow);
 
-    // Enter key submits for password creation
     newPasswordInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1463,7 +1475,6 @@
     cpCancelBtn.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
     closePwModal.addEventListener('click', () => { pwBackdrop.style.display = 'none'; pwChangeTarget = null; });
 
-    // Enter key submits for password change
     cpCurrent.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1721,7 +1732,21 @@
             const el = document.createElement('div');
             el.className = 'reply';
             const who2 = (r.name && String(r.name).trim()) ? r.name : 'Unknown';
-            el.innerHTML = `<span class="r-name">${who2}:</span> ${String(r.text || '')}`;
+            
+            // Color the reply oval
+            try { el.style.background = colorForName(who2); } catch (e) { el.style.background = 'rgba(0,0,0,0.45)'; }
+            
+            const nameSpan2 = document.createElement('span');
+            nameSpan2.className = 'r-name';
+            nameSpan2.textContent = who2 + ':';
+            
+            const contentSpan2 = document.createElement('span');
+            contentSpan2.className = 'r-content';
+            contentSpan2.textContent = ' ' + String(r.text || '');
+            
+            el.appendChild(nameSpan2);
+            el.appendChild(contentSpan2);
+            
             wrap.appendChild(el);
           }
           messagesDiv.appendChild(wrap);
@@ -1925,7 +1950,6 @@
     howClose.addEventListener('click', () => { howBackdrop.style.display = 'none'; });
     howBackdrop.addEventListener('click', (ev) => { if (ev.target === howBackdrop) howBackdrop.style.display = 'none'; });
 
-    // Open server creation modal with checkboxes
     function openServerModal(mode, serverName = null) {
       serverModalMode = mode;
       editingServerName = serverName;
@@ -1940,7 +1964,6 @@
         createServerBtn.textContent = 'Save Changes';
       }
 
-      // Populate members list with checkboxes
       membersList.innerHTML = '';
       const accounts = accountsCache.slice();
 
@@ -1953,7 +1976,6 @@
         cb.id = `member_${acc}`;
         cb.dataset.name = acc;
 
-        // If editing, check members that are already in the server
         if (mode === 'edit' && serverName) {
           const sd = getServerData(serverName);
           if (sd.members.includes(acc)) {
@@ -1981,7 +2003,6 @@
       serverNameInput.focus();
     }
 
-    // Enter key submit for server name input
     serverNameInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -1991,12 +2012,10 @@
       }
     });
 
-    // Admin add server button - opens modal
     addServerBtn.addEventListener('click', () => {
       openServerModal('create');
     });
 
-    // User add server button - opens modal
     userAddServerBtn.addEventListener('click', () => {
       openServerModal('create');
     });
@@ -2044,18 +2063,15 @@
           serverBackdrop.style.display = 'none';
           alert(`Server "${name}" created successfully.`);
         } else {
-          // Edit mode
           if (name !== editingServerName && existing[name]) {
             alert('A server with that name already exists.');
             return;
           }
 
           if (name !== editingServerName) {
-            // Rename
             existing[name] = existing[editingServerName];
             delete existing[editingServerName];
 
-            // Update messages
             try {
               const msgsSnap = await getDocs(collection(db, 'messages'));
               const updates = [];
@@ -2071,7 +2087,6 @@
             }
           }
 
-          // Update members
           existing[name].members = members;
           await setDoc(serversDocRef, { map: existing }, { merge: true });
           serverBackdrop.style.display = 'none';
@@ -2082,7 +2097,6 @@
       }
     });
 
-    // Populate admin servers panel
     async function populateServersFor(accountName) {
       serversList.innerHTML = '';
       if (!accountName || accountName !== ADMIN_NAME) return;
@@ -2128,7 +2142,6 @@
               delete existing[serverName];
               await setDoc(serversDocRef, { map: existing }, { merge: true });
               
-              // Update messages
               try {
                 const msgsSnap = await getDocs(collection(db, 'messages'));
                 const updates = [];
@@ -2157,7 +2170,6 @@
       }
     }
 
-    // Populate user servers panel (only servers created by current user)
     async function populateUserServersFor(accountName) {
       userServersList.innerHTML = '';
       if (!accountName || accountName === ADMIN_NAME) return;
@@ -2169,7 +2181,6 @@
         const sd = getServerData(serverName);
         const creator = sd.creator || null;
 
-        // Only show servers created by this user
         if (creator !== accountName) continue;
 
         const li = document.createElement('li');
@@ -2205,7 +2216,6 @@
               delete existing[serverName];
               await setDoc(serversDocRef, { map: existing }, { merge: true });
               
-              // Update messages
               try {
                 const msgsSnap = await getDocs(collection(db, 'messages'));
                 const updates = [];
@@ -2234,24 +2244,12 @@
       }
     }
 
-    // Populate side panels
     function populateSidePanels() {
       if (!currentUser) return;
 
       dmAccountsList.innerHTML = '';
       const accounts = accountsCache.filter(a => a !== currentUser);
       
-      const mainBtn = document.createElement('button');
-      mainBtn.className = 'dm-account-btn';
-      mainBtn.textContent = 'Main Server';
-      mainBtn.addEventListener('click', () => {
-        activeChatTarget = 'Main Server';
-        activeChatType = 'main';
-        updateActivePanelStates();
-        renderMessages(lastMessages);
-      });
-      dmAccountsList.appendChild(mainBtn);
-
       accounts.forEach(acc => {
         const btn = document.createElement('button');
         btn.className = 'dm-account-btn';
@@ -2266,6 +2264,19 @@
       });
 
       serversSelectList.innerHTML = '';
+      
+      // Main Server button in Servers panel
+      const mainBtn = document.createElement('button');
+      mainBtn.className = 'server-select-btn';
+      mainBtn.textContent = 'Main Server';
+      mainBtn.addEventListener('click', () => {
+        activeChatTarget = 'Main Server';
+        activeChatType = 'main';
+        updateActivePanelStates();
+        renderMessages(lastMessages);
+      });
+      serversSelectList.appendChild(mainBtn);
+
       const serverNames = Object.keys(serversMap || {});
       for (const s of serverNames) {
         const sd = getServerData(s);
@@ -2290,9 +2301,7 @@
     function updateActivePanelStates() {
       const dmBtns = dmAccountsList.querySelectorAll('.dm-account-btn');
       dmBtns.forEach(btn => {
-        if (activeChatType === 'main' && btn.textContent === 'Main Server') {
-          btn.classList.add('active');
-        } else if (activeChatType === 'dm' && btn.textContent === activeChatTarget) {
+        if (activeChatType === 'dm' && btn.textContent === activeChatTarget) {
           btn.classList.add('active');
         } else {
           btn.classList.remove('active');
@@ -2301,7 +2310,9 @@
 
       const serverBtns = serversSelectList.querySelectorAll('.server-select-btn');
       serverBtns.forEach(btn => {
-        if (activeChatType === 'server' && btn.textContent === activeChatTarget) {
+        if (activeChatType === 'main' && btn.textContent === 'Main Server') {
+          btn.classList.add('active');
+        } else if (activeChatType === 'server' && btn.textContent === activeChatTarget) {
           btn.classList.add('active');
         } else {
           btn.classList.remove('active');
